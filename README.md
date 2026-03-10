@@ -1,129 +1,328 @@
 # flaui
 
-**Automate any Windows desktop app from the command line. No code required.**
+**Give your AI coding agent eyes and hands on any Windows desktop app.**
 
-A stateless CLI tool that turns Windows UI Automation into simple, scriptable commands with structured JSON output.
+A stateless CLI that lets AI agents launch apps, find elements, click buttons, type text, and generate test steps — all through structured JSON that agents already know how to parse.
+
+<!-- badges -->
+[![Build](https://github.com/kodroi/FlaUI.Cli/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/kodroi/FlaUI.Cli/actions/workflows/build-and-test.yml)
+[![NuGet](https://img.shields.io/nuget/v/FlaUI.Cli)](https://www.nuget.org/packages/FlaUI.Cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+CLI-first, machine-readable output, built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI Automation (UIA3). Every command is stateless. Every response is JSON. Every element selector is quality-rated.
+
+**Agent interaction example:**
+
+```
+You: "Click the Login button in MyApp"
+
+Agent runs:
+  $ flaui session new --app "MyApp.exe"
+  $ flaui elem find --name "Login" --type "Button"
+  $ flaui elem click --id a1b2c3d4
+
+  {"success":true,"message":"Clicked.","elementId":"a1b2c3d4","selectorQuality":"Stable"}
+```
 
 ---
 
-## The Problem
+## Why flaui
 
-Automating Windows desktop applications usually means writing C# projects, managing NuGet packages, compiling code, and dealing with flaky element selectors that break silently. For CI pipelines, test scripts, or quick automation tasks, this overhead kills productivity.
+- **Desktop automation without code** — your agent calls CLI commands instead of writing C# projects, managing NuGet packages, and compiling test harnesses
+- **Selector quality ratings** — every found element is rated `Stable`, `Acceptable`, or `Fragile`, so the agent knows when a selector will break in CI before it actually breaks
+- **Test step generation** — the agent records its own interactions and exports reproducible test sequences as structured JSON
+- **Selector policy enforcement** — set a quality floor per session; commands fail fast on fragile selectors instead of producing flaky tests
+- **Session-based, stateless commands** — launch an app, get a session file, pass it to subsequent commands; no persistent process, no shared memory
+- **JSON everything** — pipe output to `jq`, parse it in PowerShell, or let the agent reason about it directly
 
-## The Solution
+---
 
-`flaui` is a .NET global tool that wraps [FlaUI](https://github.com/FlaUI/FlaUI) into a zero-code CLI. Every command is stateless, every response is JSON, and every element selector is quality-rated so you know before your pipeline breaks.
+## Installation
 
-- **Stateless sessions** — launch an app, get a session file, pass it to subsequent commands
-- **JSON everything** — pipe output to `jq`, parse it in PowerShell, feed it to your test harness
-- **Selector quality ratings** — every found element is rated `Stable`, `Acceptable`, or `Fragile`
-- **Built-in recording** — record interaction sequences and export them for replay
+Requires [.NET 10 SDK](https://dotnet.microsoft.com/download) or later. Windows only.
+
+```bash
+dotnet tool install --global FlaUI.Cli
+```
 
 ---
 
 ## Quick Start
 
 ```bash
-# Install
-dotnet tool install --global FlaUI.Cli
-
 # Launch an app and create a session
-flaui session new --app "C:\Windows\System32\notepad.exe"
+flaui session new --app "C:\Path\To\MyApp.exe" --selector-policy stable
 
-# Find an element
-flaui elem find --aid "RichEditBox"
+# Explore the UI tree
+flaui elem tree --depth 3
+
+# Find an element by AutomationId
+flaui elem find --aid "UsernameTextBox"
 
 # Type into it
-flaui elem type --id <element-id> --text "Hello from the CLI"
+flaui elem type --id a1b2c3d4 --text "testuser@example.com"
 
-# Click a menu item
-flaui elem find --name "File"
-flaui elem click --id <element-id>
-```
+# Find and click the submit button
+flaui elem find --name "Submit"
+flaui elem click --id e5f6g7h8
 
-Every command outputs structured JSON:
-
-```json
-{
-  "success": true,
-  "message": "Element found.",
-  "elementId": "a1b2c3d4",
-  "automationId": "RichEditBox",
-  "controlType": "Document",
-  "selectorQuality": "Stable",
-  "selectorStrategy": "AutomationId"
-}
+# End the session
+flaui session end --close-app
 ```
 
 ---
 
-## Installation
+## Commands
 
-Requires [.NET 10 SDK](https://dotnet.microsoft.com/download) or later (Windows only).
+All commands accept a global `--session <path>` option to specify the session file. If omitted, the most recent session file in the current directory is used.
 
-```bash
-dotnet tool install --global FlaUI.Cli
-```
+### `session new`
 
----
-
-## Command Reference
-
-### Global Options
-
-| Option | Description |
-|--------|-------------|
-| `--session <path>` | Path to session file (auto-detected if omitted) |
-
-### `session` — Manage application sessions
-
-| Command | Description |
-|---------|-------------|
-| `session new --app <path> [--args <args>] [--selector-policy <policy>]` | Launch app and create session |
-| `session attach --pid <pid>` | Attach to a running process |
-| `session status` | Check if the session's process is still running |
-| `session end` | End the session and optionally close the app |
-
-The `--selector-policy` flag sets the minimum selector quality for the session: `stable` (default), `acceptable`, or `fragile`.
-
-### `elem` — Find and interact with elements
-
-| Command | Description |
-|---------|-------------|
-| `elem find --aid <id> \| --name <n> \| --type <t> \| --class <c> [--timeout <ms>]` | Find an element |
-| `elem tree [--depth <n>]` | Display the element tree |
-| `elem props --id <id>` | Get all properties of an element |
-| `elem click --id <id> [--double] [--right]` | Click an element |
-| `elem type --id <id> --text <text>` | Type text into an element |
-| `elem set-value --id <id> --value <value>` | Set an element's value |
-| `elem select --id <id> --item <item>` | Select an option |
-| `elem get-value --id <id>` | Get an element's current value |
-| `elem get-state --id <id>` | Get an element's toggle/check state |
-
-### `wait` — Wait for conditions
+Launch an application and create a new session.
 
 ```bash
-flaui wait --id <id> --condition <condition> [--timeout <ms>]
+flaui session new --app <path> [--args <args>] [--selector-policy <policy>]
 ```
 
-### `record` — Record interaction sequences
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--app` | Yes | Path to the application executable |
+| `--args` | No | Arguments to pass to the application |
+| `--selector-policy` | No | Minimum selector quality: `stable` (default), `acceptable`, `fragile` |
 
-| Command | Description |
-|---------|-------------|
-| `record start` | Begin recording |
-| `record stop` | Stop recording |
-| `record drop` | Drop the last recorded step |
-| `record keep` | Mark the last step as kept |
-| `record list` | List all recorded steps |
-| `record export [--format <format>]` | Export the recording |
+### `session attach`
 
-### `audit` — Audit selector quality
+Attach to an already running application.
 
 ```bash
-flaui audit
+flaui session attach [--pid <pid>] [--name <name>] [--title <title>]
 ```
 
-Analyzes all elements in the current session and reports selector quality ratings.
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--pid` | One of three | Process ID to attach to |
+| `--name` | One of three | Process name to attach to |
+| `--title` | One of three | Window title to attach to |
+
+### `session status`
+
+Check if the session's process is still running and the window is valid.
+
+```bash
+flaui session status
+```
+
+Returns process alive state, window validity, element count, and recording status.
+
+### `session end`
+
+End the session and optionally close the application.
+
+```bash
+flaui session end [--close-app]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--close-app` | No | Close the application when ending session |
+
+### `elem find`
+
+Find an element by one or more properties. Returns an element ID for use in subsequent commands.
+
+```bash
+flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [--timeout <ms>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--aid` | No | AutomationId to find |
+| `--name` | No | Element name to find |
+| `--type` | No | ControlType to find |
+| `--class` | No | ClassName to find |
+| `--timeout` | No | Search timeout in milliseconds (default: 10000) |
+
+Response includes `selectorQuality` and `selectorStrategy` so the agent knows how reliable the selector is.
+
+### `elem tree`
+
+Dump the element tree as JSON.
+
+```bash
+flaui elem tree [--root <id>] [--depth <n>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--root` | No | Element ID to use as tree root (default: main window) |
+| `--depth` | No | Maximum tree depth (default: 3) |
+
+### `elem props`
+
+Get all properties of an element.
+
+```bash
+flaui elem props --id <id>
+```
+
+Returns AutomationId, Name, ControlType, ClassName, Bounds, IsEnabled, IsOffscreen, RuntimeId, HelpText, and AcceleratorKey.
+
+### `elem click`
+
+Click an element.
+
+```bash
+flaui elem click --id <id> [--double] [--right]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--double` | No | Double click |
+| `--right` | No | Right click |
+
+### `elem type`
+
+Type text into an element.
+
+```bash
+flaui elem type --id <id> --text <text>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--text` | Yes | Text to type |
+
+### `elem set-value`
+
+Set an element's value via the Value pattern.
+
+```bash
+flaui elem set-value --id <id> --value <value>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--value` | Yes | Value to set |
+
+### `elem select`
+
+Select an item in a combo box or list.
+
+```bash
+flaui elem select --id <id> --item <item>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--item` | Yes | Item to select |
+
+### `elem get-value`
+
+Get an element's current value.
+
+```bash
+flaui elem get-value --id <id> [--save <name>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--save` | No | Save the value to a session variable for later use |
+
+### `elem get-state`
+
+Get an element's toggle/check state, enabled status, and visibility.
+
+```bash
+flaui elem get-state --id <id>
+```
+
+### `wait`
+
+Wait for an element condition to be met.
+
+```bash
+flaui wait --aid <id> --timeout <ms> [--value <value>] [--state <state>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--aid` | Yes | AutomationId of the element to wait for |
+| `--timeout` | Yes | Timeout in milliseconds |
+| `--value` | No | Wait until element has this value |
+| `--state` | No | Wait for state: `hidden`, `visible`, `enabled` |
+
+### `record start`
+
+Begin recording interactions. All subsequent `elem` commands are recorded as steps.
+
+```bash
+flaui record start
+```
+
+### `record stop`
+
+Stop recording.
+
+```bash
+flaui record stop
+```
+
+### `record drop`
+
+Drop the last recorded step.
+
+```bash
+flaui record drop
+```
+
+### `record keep`
+
+Mark the last recorded step as kept.
+
+```bash
+flaui record keep
+```
+
+### `record list`
+
+List all recorded steps with their sequence numbers, commands, and targets.
+
+```bash
+flaui record list
+```
+
+### `record export`
+
+Export recorded steps to a JSON file.
+
+```bash
+flaui record export --out <path>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--out` | Yes | Output file path |
+
+### `audit`
+
+Audit selector quality across all elements or recorded steps.
+
+```bash
+flaui audit [--window <id>] [--recording] [--out <path>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--window` | No | Element ID to scope the audit to |
+| `--recording` | No | Audit recorded steps instead of live elements |
+| `--out` | No | Write audit report to file |
+
+Returns total elements, AutomationId coverage, selector quality distribution, and a list of issues (interactive controls with weak selectors).
 
 ---
 
@@ -131,35 +330,31 @@ Analyzes all elements in the current session and reports selector quality rating
 
 Every time `flaui` resolves an element, it evaluates the selector and assigns a quality rating:
 
-| Rating | Meaning |
-|--------|---------|
-| **Stable** | Element has a unique `AutomationId` — the gold standard |
-| **Acceptable** | Resolved by `Name` + `ControlType` or similar composite selector |
-| **Fragile** | Resolved by position, index, or other volatile properties |
-| **Unresolvable** | Element could not be found |
+| Rating | What It Means | Agent Action |
+|--------|---------------|--------------|
+| **Stable** | Unique `AutomationId` — the gold standard | Use with confidence |
+| **Acceptable** | Resolved by `Name` + `ControlType` composite | Use, but note the risk |
+| **Fragile** | Resolved by position, index, or volatile property | Flag for review or find a better selector |
+| **Unresolvable** | Element not found | Retry, adjust approach, or report failure |
 
 ### Selector Policy
-
-Set a policy per session to enforce minimum quality:
 
 ```bash
 flaui session new --app "MyApp.exe" --selector-policy stable
 ```
 
-If a `find` command resolves an element below the policy threshold, it returns exit code `2` (policy violation) instead of success. This lets CI pipelines catch fragile selectors before they cause flaky tests.
+With policy set to `stable`, any `elem find` that resolves below that threshold returns exit code `2` (policy violation). The agent knows immediately that the selector isn't reliable enough for production tests.
 
 ---
 
-## Recording Workflow
+## Test Step Generation
 
-Record a sequence of interactions, then export them:
+Record a sequence of interactions, then export them as structured test data:
 
 ```bash
-# Start a session and begin recording
 flaui session new --app "MyApp.exe"
 flaui record start
 
-# Interact with the application
 flaui elem find --name "Username"
 flaui elem type --id <id> --text "admin"
 flaui elem find --name "Password"
@@ -167,11 +362,14 @@ flaui elem type --id <id> --text "secret"
 flaui elem find --name "Login"
 flaui elem click --id <id>
 
-# Review and export
-flaui record list
 flaui record stop
-flaui record export
+flaui record export --out login-steps.json
+
+# Audit the recording for selector quality
+flaui audit --recording
 ```
+
+Every recorded step includes element selectors, quality ratings, timestamps, and parameters. The agent exports them as structured JSON that can be transformed into test cases in any framework.
 
 ---
 
@@ -181,8 +379,35 @@ flaui record export
 |------|---------|
 | `0` | Success |
 | `1` | General error |
-| `2` | Selector policy violation |
-| `3` | Element unresolvable |
+| `2` | Selector policy violation — element found but selector quality below policy threshold |
+| `3` | Element unresolvable — element not found within timeout |
+
+Agents use exit codes for control flow. A non-zero exit tells the agent exactly what went wrong without parsing error messages.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────┐
+│  AI Coding Agent            │
+│  (Claude Code, Cursor, etc) │
+└─────────┬───────────────────┘
+          │ shell commands + JSON
+          ▼
+┌─────────────────────────────┐
+│  flaui CLI                  │
+│  stateless, per-command     │
+└─────────┬───────────────────┘
+          │ UI Automation (UIA3)
+          ▼
+┌─────────────────────────────┐
+│  Windows Desktop App        │
+│  (WPF, WinForms, Win32)    │
+└─────────────────────────────┘
+```
+
+No SDK integration. No library imports. The agent calls `flaui` the same way it calls `git` or `dotnet` — as a CLI tool.
 
 ---
 
