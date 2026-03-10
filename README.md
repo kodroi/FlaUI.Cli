@@ -1,39 +1,39 @@
 # flaui
 
-**Give your AI coding agent eyes and hands on any Windows desktop app.**
+**Let your AI agent navigate your app, verify its own changes, and write the tests.**
 
-A stateless CLI that lets AI agents launch apps, find elements, click buttons, type text, and generate test steps — all through structured JSON that agents already know how to parse.
+AI coding agents write your code. But when that code has a UI, the agent can't see what it built, can't check if the button works, and can't write a test for it. `flaui` closes that gap.
 
 <!-- badges -->
 [![Build](https://github.com/kodroi/FlaUI.Cli/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/kodroi/FlaUI.Cli/actions/workflows/build-and-test.yml)
 [![NuGet](https://img.shields.io/nuget/v/FlaUI.Cli)](https://www.nuget.org/packages/FlaUI.Cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-CLI-first, machine-readable output, built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI Automation (UIA3). Every command is stateless. Every response is JSON. Every element selector is quality-rated.
+A stateless CLI built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI Automation (UIA3). Every command returns structured JSON. Every element selector is quality-rated. The agent drives it the same way it drives `git` or `dotnet` — from the terminal.
 
-**Agent interaction example:**
+**The workflow:**
 
 ```
-You: "Click the Login button in MyApp"
-
-Agent runs:
-  $ flaui session new --app "MyApp.exe"
-  $ flaui elem find --name "Login" --type "Button"
-  $ flaui elem click --id a1b2c3d4
-
-  {"success":true,"message":"Clicked.","elementId":"a1b2c3d4","selectorQuality":"Stable"}
+1. Agent writes code that changes a WPF form
+2. Agent launches the app:          flaui session new --app "MyApp.exe"
+3. Agent navigates to the form:     flaui elem find --name "Customer Details"
+4. Agent verifies its changes work: flaui elem find --aid "EmailField"
+                                    flaui elem type --id a1b2 --text "test@co.com"
+                                    flaui elem find --name "Save"
+                                    flaui elem click --id c3d4
+5. Agent reads the result:          flaui elem get-value --id a1b2
+6. Agent exports the steps as test: flaui record export --out customer-form-test.json
 ```
 
 ---
 
 ## Why flaui
 
-- **Desktop automation without code** — your agent calls CLI commands instead of writing C# projects, managing NuGet packages, and compiling test harnesses
-- **Selector quality ratings** — every found element is rated `Stable`, `Acceptable`, or `Fragile`, so the agent knows when a selector will break in CI before it actually breaks
-- **Test step generation** — the agent records its own interactions and exports reproducible test sequences as structured JSON
-- **Selector policy enforcement** — set a quality floor per session; commands fail fast on fragile selectors instead of producing flaky tests
-- **Session-based, stateless commands** — launch an app, get a session file, pass it to subsequent commands; no persistent process, no shared memory
-- **JSON everything** — pipe output to `jq`, parse it in PowerShell, or let the agent reason about it directly
+- **Agents can verify their own UI changes** — the agent builds a feature, launches the app, and checks that buttons, fields, and workflows actually work
+- **Agents generate tests from real interactions** — every click, type, and navigation is recorded and exported as structured test steps; the agent turns them into test cases
+- **Selector quality keeps tests reliable** — every element is rated `Stable`, `Acceptable`, or `Fragile`; the agent knows which selectors will survive the next refactor
+- **Selector policies fail fast** — set a quality floor per session; fragile selectors return exit code `2` instead of silently producing a flaky test
+- **Stateless and JSON-native** — no persistent process, no shared memory; agents parse JSON natively, so there's zero glue code between the agent and the tool
 
 ---
 
@@ -50,23 +50,26 @@ dotnet tool install --global FlaUI.Cli
 ## Quick Start
 
 ```bash
-# Launch an app and create a session
+# Agent launches the app it just modified
 flaui session new --app "C:\Path\To\MyApp.exe" --selector-policy stable
 
-# Explore the UI tree
+# Agent explores the UI to understand the layout
 flaui elem tree --depth 3
 
-# Find an element by AutomationId
+# Agent finds the field it added in the last commit
 flaui elem find --aid "UsernameTextBox"
 
-# Type into it
+# Agent types into it to verify it works
 flaui elem type --id a1b2c3d4 --text "testuser@example.com"
 
-# Find and click the submit button
+# Agent clicks submit to test the full flow
 flaui elem find --name "Submit"
 flaui elem click --id e5f6g7h8
 
-# End the session
+# Agent reads back the result to confirm
+flaui elem get-value --id a1b2c3d4
+
+# Done — agent closes the app
 flaui session end --close-app
 ```
 
@@ -347,14 +350,16 @@ With policy set to `stable`, any `elem find` that resolves below that threshold 
 
 ---
 
-## Test Step Generation
+## Test Generation from Real Interactions
 
-Record a sequence of interactions, then export them as structured test data:
+The agent doesn't write tests from imagination. It writes code, runs the app, interacts with it, and turns those real interactions into tests.
 
 ```bash
+# Agent finished implementing a login feature — now it verifies and records
 flaui session new --app "MyApp.exe"
 flaui record start
 
+# Agent navigates the UI it just built
 flaui elem find --name "Username"
 flaui elem type --id <id> --text "admin"
 flaui elem find --name "Password"
@@ -362,14 +367,19 @@ flaui elem type --id <id> --text "secret"
 flaui elem find --name "Login"
 flaui elem click --id <id>
 
-flaui record stop
-flaui record export --out login-steps.json
+# Agent checks the result
+flaui elem find --aid "WelcomeLabel"
+flaui elem get-value --id <id>
 
-# Audit the recording for selector quality
+# Agent exports the verified steps as a test definition
+flaui record stop
+flaui record export --out login-test.json
+
+# Agent audits selector quality to ensure test stability
 flaui audit --recording
 ```
 
-Every recorded step includes element selectors, quality ratings, timestamps, and parameters. The agent exports them as structured JSON that can be transformed into test cases in any framework.
+Every recorded step includes element selectors, quality ratings, timestamps, and parameters. The agent uses this structured JSON to generate test cases in whatever framework the project uses — NUnit, xUnit, MSTest, or a custom harness.
 
 ---
 
