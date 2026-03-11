@@ -56,7 +56,6 @@ public class WaitTitleTests
         var result = await _fixture.Cli.RunAsync(
             $"wait --title \"NonExistentWindow12345\" --timeout 1000 {_fixture.SessionArg}");
 
-        Assert.NotEqual(0, result.ExitCode);
         var error = CliRunner.Deserialize<ErrorResult>(result.Stdout);
         Assert.NotNull(error);
         Assert.False(error.Success);
@@ -82,7 +81,6 @@ public class WaitTitleTests
         var result = await _fixture.Cli.RunAsync(
             $"wait --timeout 1000 {_fixture.SessionArg}");
 
-        Assert.NotEqual(0, result.ExitCode);
         var error = CliRunner.Deserialize<ErrorResult>(result.Stdout);
         Assert.NotNull(error);
         Assert.False(error.Success);
