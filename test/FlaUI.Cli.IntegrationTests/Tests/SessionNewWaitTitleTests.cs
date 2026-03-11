@@ -1,36 +1,39 @@
-using System.Diagnostics;
-
 namespace FlaUI.Cli.IntegrationTests.Tests;
 
+[Collection("TestApp")]
 public class SessionNewWaitTitleTests
 {
+    private readonly TestAppFixture _fixture;
+
+    public SessionNewWaitTitleTests(TestAppFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
     [Fact]
     public async Task SessionNew_WaitTitle_MatchesWindowByTitle()
     {
         var solutionRoot = SolutionLocator.FindSolutionRoot();
-        var cliPath = SolutionLocator.GetCliPath(solutionRoot);
         var testAppPath = SolutionLocator.GetTestAppPath(solutionRoot);
-        var cli = new CliRunner(cliPath);
-
-        string? sessionPath = null;
+        var sessionPath = Path.Combine(Path.GetTempPath(), $"flaui-wait-title-{Guid.NewGuid():N}.session.json");
 
         try
         {
-            var result = await cli.RunAsync(
-                $"session new --app \"{testAppPath}\" --wait-title \"Contact Form\" --wait-timeout 15000");
+            var result = await _fixture.Cli.RunAsync(
+                $"session new --app \"{testAppPath}\" --wait-title \"Contact Form\" --wait-timeout 15000 --session \"{sessionPath}\"");
 
             Assert.Equal(0, result.ExitCode);
             var session = CliRunner.Deserialize<SessionNewResult>(result.Stdout);
             Assert.NotNull(session);
             Assert.True(session.Success);
             Assert.Contains("Contact Form", session.MainWindowTitle);
-            sessionPath = session.SessionFile;
         }
         finally
         {
-            if (sessionPath is not null)
+            if (File.Exists(sessionPath))
             {
-                await cli.RunAsync($"session end --close-app --session \"{sessionPath}\"");
+                await _fixture.Cli.RunAsync($"session end --close-app --session \"{sessionPath}\"");
+                try { File.Delete(sessionPath); } catch { /* best effort */ }
             }
         }
     }
@@ -39,37 +42,29 @@ public class SessionNewWaitTitleTests
     public async Task SessionNew_WaitTitle_TimesOutOnWrongTitle()
     {
         var solutionRoot = SolutionLocator.FindSolutionRoot();
-        var cliPath = SolutionLocator.GetCliPath(solutionRoot);
         var testAppPath = SolutionLocator.GetTestAppPath(solutionRoot);
-        var cli = new CliRunner(cliPath);
+        var sessionPath = Path.Combine(Path.GetTempPath(), $"flaui-wait-title-{Guid.NewGuid():N}.session.json");
 
-        // Snapshot existing TestApp PIDs so we only kill the one we spawn
-        var existingPids = Process.GetProcessesByName("FlaUI.Cli.TestApp")
-            .Select(p => p.Id)
-            .ToHashSet();
-
-        var result = await cli.RunAsync(
-            $"session new --app \"{testAppPath}\" --wait-title \"NonExistentTitle\" --wait-timeout 2000");
-
-        Assert.NotEqual(0, result.ExitCode);
-        var error = CliRunner.Deserialize<ErrorResult>(result.Stdout);
-        Assert.NotNull(error);
-        Assert.False(error.Success);
-        Assert.Contains("Timeout", error.Message);
-
-        // Kill only the newly spawned TestApp process
         try
         {
-            foreach (var p in Process.GetProcessesByName("FlaUI.Cli.TestApp"))
-            {
-                if (!existingPids.Contains(p.Id))
-                    p.Kill();
-                p.Dispose();
-            }
+            var result = await _fixture.Cli.RunAsync(
+                $"session new --app \"{testAppPath}\" --wait-title \"NonExistentTitle99\" --wait-timeout 2000 --session \"{sessionPath}\"",
+                timeoutMs: 15000);
+
+            Assert.NotEqual(0, result.ExitCode);
+            var error = CliRunner.Deserialize<ErrorResult>(result.Stdout);
+            Assert.NotNull(error);
+            Assert.False(error.Success);
+            Assert.Contains("Timeout", error.Message);
         }
-        catch
+        finally
         {
-            // best effort
+            // The session file may or may not exist — clean up either way
+            if (File.Exists(sessionPath))
+            {
+                await _fixture.Cli.RunAsync($"session end --close-app --session \"{sessionPath}\"");
+                try { File.Delete(sessionPath); } catch { /* best effort */ }
+            }
         }
     }
 }
