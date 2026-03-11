@@ -206,6 +206,11 @@ public record ScrollIntoViewResult(
     string? ElementId,
     bool Scrolled);
 
+public record ReportResult(
+    bool Success,
+    string? Message,
+    string? IssueUrl);
+
 public record ErrorResult(
     bool Success,
     string? Message);
