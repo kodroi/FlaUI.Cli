@@ -1,11 +1,12 @@
 <Window x:Class="FlaUI.Cli.TestApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Contact Form" Height="400" Width="400"
+        Title="Contact Form" Height="650" Width="400"
         AutomationProperties.AutomationId="MainWindow">
 
     <DockPanel>
     <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
+
         <MenuItem Header="File" AutomationProperties.AutomationId="FileMenu">
             <MenuItem Header="New" AutomationProperties.AutomationId="FileNew" Click="MenuItem_Click"/>
             <MenuItem Header="Open" AutomationProperties.AutomationId="FileOpen" Click="MenuItem_Click"/>
@@ -25,6 +26,11 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -111,7 +117,59 @@
             <ListBoxItem Content="Item 10" AutomationProperties.AutomationId="ScrollItem10"/>
         </ListBox>
 
-        <TextBlock Grid.Row="8" Grid.ColumnSpan="2"
+        <Expander Grid.Row="8" Grid.ColumnSpan="2"
+                  AutomationProperties.AutomationId="TestExpander"
+                  x:Name="TestExpander"
+                  Header="More Details"
+                  IsExpanded="False"
+                  Margin="0,0,0,8">
+            <TextBlock AutomationProperties.AutomationId="ExpanderContent"
+                       Text="Hidden content revealed by expanding"/>
+        </Expander>
+
+        <TextBlock Grid.Row="9" Grid.Column="0" Text="Items (V):" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="9" Grid.Column="1"
+                  AutomationProperties.AutomationId="VirtualizedCombo"
+                  x:Name="VirtualizedCombo"
+                  Margin="0,0,0,8"
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  VirtualizingStackPanel.VirtualizationMode="Standard"/>
+
+        <TextBlock Grid.Row="10" Grid.Column="0" Text="Slider:" VerticalAlignment="Center"/>
+        <Slider Grid.Row="10" Grid.Column="1"
+                AutomationProperties.AutomationId="TestSlider"
+                x:Name="TestSlider"
+                Minimum="0" Maximum="100" Value="50"
+                IsSnapToTickEnabled="True" TickFrequency="1"
+                Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="11" Grid.Column="0" Text="Grid:" VerticalAlignment="Top"/>
+        <DataGrid Grid.Row="11" Grid.Column="1"
+                  AutomationProperties.AutomationId="TestGrid"
+                  x:Name="TestGrid"
+                  IsReadOnly="True"
+                  AutoGenerateColumns="False"
+                  Height="100" Margin="0,0,0,8"
+                  HeadersVisibility="Column">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Age" Binding="{Binding Age}" Width="60"/>
+                <DataGridTextColumn Header="City" Binding="{Binding City}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="12" Grid.Column="0" Text="Rich Text:" VerticalAlignment="Top"/>
+        <RichTextBox Grid.Row="12" Grid.Column="1"
+                     AutomationProperties.AutomationId="TestRichText"
+                     x:Name="TestRichText"
+                     IsReadOnly="True"
+                     Height="50" Margin="0,0,0,8">
+            <FlowDocument>
+                <Paragraph>This is sample rich text content for testing the Text pattern.</Paragraph>
+            </FlowDocument>
+        </RichTextBox>
+
+        <TextBlock Grid.Row="13" Grid.ColumnSpan="2"
                    AutomationProperties.AutomationId="StatusLabel"
                    x:Name="StatusLabel"
                    Text="Ready"

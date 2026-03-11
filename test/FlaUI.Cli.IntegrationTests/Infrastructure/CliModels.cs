@@ -187,6 +187,38 @@ public record ScrollIntoViewResult(
     string? ElementId,
     bool Scrolled);
 
+public record GetRangeResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    double Value,
+    double Minimum,
+    double Maximum,
+    double SmallChange,
+    double LargeChange);
+
+public record GridInfoResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    int RowCount,
+    int ColumnCount,
+    string[]? ColumnHeaders);
+
+public record GetCellResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    int Row,
+    int Column,
+    string? Value);
+
+public record GetTextResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    string? Text);
+
 public record ErrorResult(
     bool Success,
     string? Message);

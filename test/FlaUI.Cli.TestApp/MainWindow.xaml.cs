@@ -7,6 +7,24 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        PopulateVirtualizedCombo();
+        PopulateTestGrid();
+    }
+
+    private void PopulateTestGrid()
+    {
+        TestGrid.ItemsSource = new[]
+        {
+            new ContactRow("Alice", 30, "Helsinki"),
+            new ContactRow("Bob", 25, "Stockholm"),
+            new ContactRow("Carol", 35, "Oslo")
+        };
+    }
+
+    private void PopulateVirtualizedCombo()
+    {
+        for (var i = 1; i <= 200; i++)
+            VirtualizedCombo.Items.Add($"VItem {i}");
     }
 
     private void SubmitButton_Click(object sender, RoutedEventArgs e)
@@ -30,6 +48,9 @@ public partial class MainWindow : Window
         EmailInput.Text = string.Empty;
         CountryCombo.SelectedIndex = -1;
         AgreeCheckbox.IsChecked = false;
+        TestExpander.IsExpanded = false;
+        VirtualizedCombo.SelectedIndex = -1;
+        TestSlider.Value = 50;
         StatusLabel.Text = "Ready";
     }
 
@@ -52,3 +73,5 @@ public partial class MainWindow : Window
         Close();
     }
 }
+
+public record ContactRow(string Name, int Age, string City);
