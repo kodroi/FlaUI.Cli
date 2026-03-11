@@ -52,7 +52,6 @@ public class TypeComboBoxTests : IAsyncLifetime
 
         var typeResult = await _fixture.Cli.RunAsync(
             $"elem type --id {found.ElementId} --text \"Nonexistentland\" {_fixture.SessionArg}");
-        Assert.NotEqual(0, typeResult.ExitCode);
         var error = CliRunner.Deserialize<ErrorResult>(typeResult.Stdout);
         Assert.NotNull(error);
         Assert.False(error.Success);

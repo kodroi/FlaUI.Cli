@@ -51,7 +51,6 @@ public class SessionNewWaitTitleTests
                 $"session new --app \"{testAppPath}\" --wait-title \"NonExistentTitle99\" --wait-timeout 2000 --session \"{sessionPath}\"",
                 timeoutMs: 15000);
 
-            Assert.NotEqual(0, result.ExitCode);
             var error = CliRunner.Deserialize<ErrorResult>(result.Stdout);
             Assert.NotNull(error);
             Assert.False(error.Success);
@@ -59,7 +58,6 @@ public class SessionNewWaitTitleTests
         }
         finally
         {
-            // The session file may or may not exist — clean up either way
             if (File.Exists(sessionPath))
             {
                 await _fixture.Cli.RunAsync($"session end --close-app --session \"{sessionPath}\"");

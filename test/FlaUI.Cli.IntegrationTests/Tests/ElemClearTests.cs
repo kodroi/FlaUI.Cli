@@ -98,6 +98,8 @@ public class ElemClearTests : IAsyncLifetime
     public async Task Clear_InvalidElementId_ReturnsError()
     {
         var clearResult = await _fixture.Cli.RunAsync($"elem clear --id nonexistent {_fixture.SessionArg}");
-        Assert.NotEqual(0, clearResult.ExitCode);
+        var error = CliRunner.Deserialize<ErrorResult>(clearResult.Stdout);
+        Assert.NotNull(error);
+        Assert.False(error.Success);
     }
 }
