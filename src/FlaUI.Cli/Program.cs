@@ -4,6 +4,7 @@ using FlaUI.Cli.Commands.Elem;
 using FlaUI.Cli.Commands.Record;
 using FlaUI.Cli.Commands.Session;
 using FlaUI.Cli.Commands.Wait;
+using FlaUI.Cli.Infrastructure;
 
 var sessionOption = new Option<string?>("--session") { Description = "Path to session file", Recursive = true };
 
@@ -46,5 +47,7 @@ rootCommand.Add(recordCommand);
 
 // Audit command
 rootCommand.Add(AuditCommand.Create(sessionOption));
+
+UpdateChecker.RunInBackground();
 
 return await rootCommand.Parse(args).InvokeAsync();
