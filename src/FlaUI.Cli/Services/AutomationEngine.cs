@@ -115,6 +115,8 @@ public class AutomationEngine : IDisposable
         NativeInterop.BringToFront(handle);
         window.Focus();
         Thread.Sleep(100);
+
+        ScrollIntoView(element);
     }
 
     public static void Click(AutomationElement element, bool doubleClick = false, bool rightClick = false)
@@ -201,6 +203,13 @@ public class AutomationEngine : IDisposable
         if (element.Patterns.Value.IsSupported)
             return element.Patterns.Value.Pattern.Value.Value;
 
+        if (element.Patterns.Selection.IsSupported)
+        {
+            var selection = element.Patterns.Selection.Pattern.Selection.Value;
+            if (selection.Length > 0)
+                return selection[0].Name;
+        }
+
         try { return element.AsTextBox().Text; }
         catch { /* not a textbox */ }
 
@@ -284,7 +293,8 @@ public class AutomationEngine : IDisposable
         return window;
     }
 
-    public static void SendKeys(VirtualKeyShort[] keys, AutomationElement? target = null)
+    public static void SendKeys(VirtualKeyShort[] keys, AutomationElement? target = null,
+        AutomationElement? window = null)
     {
         if (target is not null)
         {
@@ -292,8 +302,32 @@ public class AutomationEngine : IDisposable
             target.Focus();
             Thread.Sleep(50);
         }
+        else if (window is not null)
+        {
+            EnsureWindowForeground(window);
+        }
 
         Keyboard.TypeSimultaneously(keys);
+        Thread.Sleep(100);
+    }
+
+    public static bool ScrollIntoView(AutomationElement element)
+    {
+        if (!element.Patterns.ScrollItem.IsSupported)
+            return false;
+
+        element.Patterns.ScrollItem.Pattern.ScrollIntoView();
+        Thread.Sleep(100);
+        return true;
+    }
+
+    public static void EnsureWindowForeground(AutomationElement window)
+    {
+        var handle = window.Properties.NativeWindowHandle.ValueOrDefault;
+        if (handle == IntPtr.Zero) return;
+
+        NativeInterop.BringToFront(handle);
+        window.Focus();
         Thread.Sleep(100);
     }
 

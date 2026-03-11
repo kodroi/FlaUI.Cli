@@ -50,6 +50,26 @@ public class KeysTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Keys_WithoutId_BringsWindowToFrontAndSendsKeys()
+    {
+        // Focus an element first so the app has keyboard state
+        var findResult = await _fixture.Cli.RunAsync($"elem find --aid FirstNameInput {_fixture.SessionArg}");
+        Assert.Equal(0, findResult.ExitCode);
+        var found = CliRunner.Deserialize<ElementFindResult>(findResult.Stdout);
+        Assert.NotNull(found?.ElementId);
+
+        await _fixture.Cli.RunAsync($"elem click --id {found.ElementId} {_fixture.SessionArg}");
+
+        // Send keys without --id — should bring app window to front before sending
+        var keysResult = await _fixture.Cli.RunAsync($"elem keys --keys tab {_fixture.SessionArg}");
+        Assert.Equal(0, keysResult.ExitCode);
+        var keys = CliRunner.Deserialize<KeysResult>(keysResult.Stdout);
+        Assert.NotNull(keys);
+        Assert.True(keys.Success);
+        Assert.Null(keys.ElementId);
+    }
+
+    [Fact]
     public async Task Keys_InvalidKey_ReturnsError()
     {
         var keysResult = await _fixture.Cli.RunAsync(

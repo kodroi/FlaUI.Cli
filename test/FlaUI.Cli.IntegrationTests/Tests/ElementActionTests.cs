@@ -87,6 +87,27 @@ public class ElementActionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetValue_ComboBox_ReturnsSelectedItem()
+    {
+        var findResult = await _fixture.Cli.RunAsync($"elem find --aid CountryCombo {_fixture.SessionArg}");
+        Assert.Equal(0, findResult.ExitCode);
+        var found = CliRunner.Deserialize<ElementFindResult>(findResult.Stdout);
+        Assert.NotNull(found?.ElementId);
+
+        var selectResult = await _fixture.Cli.RunAsync(
+            $"elem select --id {found.ElementId} --item \"Sweden\" {_fixture.SessionArg}");
+        Assert.Equal(0, selectResult.ExitCode);
+
+        var valueResult = await _fixture.Cli.RunAsync(
+            $"elem get-value --id {found.ElementId} {_fixture.SessionArg}");
+        Assert.Equal(0, valueResult.ExitCode);
+        var value = CliRunner.Deserialize<GetValueResult>(valueResult.Stdout);
+        Assert.NotNull(value);
+        Assert.True(value.Success);
+        Assert.Contains("Sweden", value.Value);
+    }
+
+    [Fact]
     public async Task GetState_Checkbox_ReturnsToggleState()
     {
         var findResult = await _fixture.Cli.RunAsync($"elem find --aid AgreeCheckbox {_fixture.SessionArg}");

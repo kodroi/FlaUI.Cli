@@ -33,6 +33,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100"/>
@@ -91,7 +92,26 @@
                     Click="ClearButton_Click"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="7" Grid.ColumnSpan="2"
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Items:" VerticalAlignment="Top"/>
+        <ListBox Grid.Row="7" Grid.Column="1"
+                 AutomationProperties.AutomationId="ScrollTestList"
+                 x:Name="ScrollTestList"
+                 Height="60" Margin="0,0,0,8"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 VirtualizingStackPanel.IsVirtualizing="False">
+            <ListBoxItem Content="Item 1" AutomationProperties.AutomationId="ScrollItem1"/>
+            <ListBoxItem Content="Item 2" AutomationProperties.AutomationId="ScrollItem2"/>
+            <ListBoxItem Content="Item 3" AutomationProperties.AutomationId="ScrollItem3"/>
+            <ListBoxItem Content="Item 4" AutomationProperties.AutomationId="ScrollItem4"/>
+            <ListBoxItem Content="Item 5" AutomationProperties.AutomationId="ScrollItem5"/>
+            <ListBoxItem Content="Item 6" AutomationProperties.AutomationId="ScrollItem6"/>
+            <ListBoxItem Content="Item 7" AutomationProperties.AutomationId="ScrollItem7"/>
+            <ListBoxItem Content="Item 8" AutomationProperties.AutomationId="ScrollItem8"/>
+            <ListBoxItem Content="Item 9" AutomationProperties.AutomationId="ScrollItem9"/>
+            <ListBoxItem Content="Item 10" AutomationProperties.AutomationId="ScrollItem10"/>
+        </ListBox>
+
+        <TextBlock Grid.Row="8" Grid.ColumnSpan="2"
                    AutomationProperties.AutomationId="StatusLabel"
                    x:Name="StatusLabel"
                    Text="Ready"

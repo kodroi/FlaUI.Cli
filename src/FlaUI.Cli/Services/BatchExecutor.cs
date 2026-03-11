@@ -118,6 +118,7 @@ public class BatchExecutor
             "elem get-value" => DispatchGetValue(args, targetWindow),
             "elem get-state" => DispatchGetState(args, targetWindow),
             "elem keys" => DispatchKeys(args, targetWindow),
+            "elem scroll-into-view" => DispatchScrollIntoView(args, targetWindow),
             "elem menu" => DispatchMenu(args, targetWindow),
             "window list" => DispatchWindowList(),
             "window focus" => DispatchWindowFocus(args),
@@ -237,9 +238,20 @@ public class BatchExecutor
             target = ResolveElement(window, id);
 
         var keys = KeyParser.Parse(keysStr);
-        AutomationEngine.SendKeys(keys, target);
+        AutomationEngine.SendKeys(keys, target, window: target is null ? window : null);
 
         return new KeysResult(true, $"Keys '{keysStr}' sent.", keysStr, id);
+    }
+
+    private ScrollIntoViewResult DispatchScrollIntoView(Dictionary<string, string> args, AutomationElement window)
+    {
+        var id = args["id"];
+        var element = ResolveElement(window, id);
+        var scrolled = AutomationEngine.ScrollIntoView(element);
+
+        return new ScrollIntoViewResult(true,
+            scrolled ? "Element scrolled into view." : "Element does not support ScrollItem pattern.",
+            id, scrolled);
     }
 
     private MenuResult DispatchMenu(Dictionary<string, string> args, AutomationElement window)

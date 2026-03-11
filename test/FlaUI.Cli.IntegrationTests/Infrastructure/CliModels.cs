@@ -177,6 +177,12 @@ public record ScreenshotResult(
     int Width,
     int Height);
 
+public record ScrollIntoViewResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    bool Scrolled);
+
 public record ErrorResult(
     bool Success,
     string? Message);

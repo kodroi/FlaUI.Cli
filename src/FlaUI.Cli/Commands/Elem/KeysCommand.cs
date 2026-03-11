@@ -50,7 +50,7 @@ public static class KeysCommand
                 }
 
                 var keys = KeyParser.Parse(keysStr);
-                AutomationEngine.SendKeys(keys, target);
+                AutomationEngine.SendKeys(keys, target, window: target is null ? targetWindow : null);
 
                 CommandHelper.RecordStep(session, "elem keys", elementId ?? "",
                     new Dictionary<string, object?> { ["keys"] = keysStr }, true);

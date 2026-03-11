@@ -279,6 +279,21 @@ flaui elem menu --path <path> [--window <handle>]
 | `--path` | Yes | Menu path with `>` separators (e.g. `"File > Save As"`) |
 | `--window` | No | Window handle (hex) to target |
 
+### `elem scroll-into-view`
+
+Scroll an element into view using the UIA ScrollItem pattern.
+
+```bash
+flaui elem scroll-into-view --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns `scrolled: true` if the element supported the ScrollItem pattern and was scrolled, or `scrolled: false` if the pattern is not supported. This is also called automatically by `elem click`, `elem type`, and other interaction commands.
+
 ### `window list`
 
 List all top-level windows for the attached application.
@@ -456,7 +471,7 @@ flaui batch --steps '<json>' [--continue-on-error]
 
 Use `$prev.field` to reference the previous step's result, or `$steps[N].field` to reference step N's result.
 
-Supported commands: `elem find`, `elem click`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `window list`, `window focus`, `window close`, `screenshot`.
+Supported commands: `elem find`, `elem click`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `window list`, `window focus`, `window close`, `screenshot`.
 
 ---
 
@@ -524,6 +539,22 @@ Every recorded step includes element selectors, quality ratings, timestamps, and
 | `3` | Element unresolvable — element not found within timeout |
 
 Agents use exit codes for control flow. A non-zero exit tells the agent exactly what went wrong without parsing error messages.
+
+---
+
+## Known Limitations & Workarounds
+
+### 1. Elements inside collapsed WPF Expanders are not found
+
+`elem find` returns "not found" for elements inside collapsed Expanders. This is correct UIA behavior — collapsed containers don't expose their children to the automation tree.
+
+**Workaround:** First expand the Expander (find it, then `elem click` to expand), then search for child elements.
+
+### 2. `elem tree` returns no children for WPF ComboBox
+
+WPF ComboBoxes use virtualized item panels. Items only appear in the UIA tree when the dropdown is open and items are scrolled into view.
+
+**Workaround:** Use `elem select --id <id> --item "ItemName"` to select items by name — this command expands the dropdown internally. To list items, open the dropdown first with `elem click`, then run `elem tree`.
 
 ---
 
