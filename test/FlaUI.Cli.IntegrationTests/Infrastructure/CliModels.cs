@@ -120,6 +120,57 @@ public record AuditIssue(
     SelectorQuality SelectorQuality,
     string? Recommendation);
 
+public record WindowInfoItem(
+    string? Handle,
+    string? Title,
+    bool IsModal,
+    string? ClassName,
+    BoundsInfo? Bounds);
+
+public record WindowListResult(
+    bool Success,
+    string? Message,
+    List<WindowInfoItem>? Windows);
+
+public record WindowFocusResult(
+    bool Success,
+    string? Message,
+    string? Handle,
+    string? Title);
+
+public record WindowCloseResult(
+    bool Success,
+    string? Message,
+    string? Handle,
+    string? Title);
+
+public record KeysResult(
+    bool Success,
+    string? Message,
+    string? Keys,
+    string? ElementId);
+
+public record MenuResult(
+    bool Success,
+    string? Message,
+    string? Path,
+    string? ClickedItemName);
+
+public record BatchResult(
+    bool Success,
+    string? Message,
+    int TotalSteps,
+    int Succeeded,
+    int Failed,
+    List<BatchStepResult>? Steps);
+
+public record BatchStepResult(
+    int Index,
+    string? Command,
+    bool Success,
+    string? Message,
+    object? Result);
+
 public record ErrorResult(
     bool Success,
     string? Message);

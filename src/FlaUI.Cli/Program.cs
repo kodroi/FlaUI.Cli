@@ -1,9 +1,11 @@
 using System.CommandLine;
 using FlaUI.Cli.Commands.Audit;
+using FlaUI.Cli.Commands.Batch;
 using FlaUI.Cli.Commands.Elem;
 using FlaUI.Cli.Commands.Record;
 using FlaUI.Cli.Commands.Session;
 using FlaUI.Cli.Commands.Wait;
+using FlaUI.Cli.Commands.Window;
 using FlaUI.Cli.Infrastructure;
 
 var sessionOption = new Option<string?>("--session") { Description = "Path to session JSON file. Auto-detected from the working directory if not specified", Recursive = true };
@@ -30,7 +32,16 @@ elemCommand.Add(SetValueCommand.Create(sessionOption));
 elemCommand.Add(SelectCommand.Create(sessionOption));
 elemCommand.Add(GetValueCommand.Create(sessionOption));
 elemCommand.Add(GetStateCommand.Create(sessionOption));
+elemCommand.Add(KeysCommand.Create(sessionOption));
+elemCommand.Add(MenuCommand.Create(sessionOption));
 rootCommand.Add(elemCommand);
+
+// Window commands
+var windowCommand = new Command("window", "Manage application windows");
+windowCommand.Add(ListWindowsCommand.Create(sessionOption));
+windowCommand.Add(FocusWindowCommand.Create(sessionOption));
+windowCommand.Add(CloseWindowCommand.Create(sessionOption));
+rootCommand.Add(windowCommand);
 
 // Wait command
 rootCommand.Add(WaitCommand.Create(sessionOption));
@@ -47,6 +58,9 @@ rootCommand.Add(recordCommand);
 
 // Audit command
 rootCommand.Add(AuditCommand.Create(sessionOption));
+
+// Batch command
+rootCommand.Add(BatchCommand.Create(sessionOption));
 
 UpdateChecker.RunInBackground();
 

@@ -12,15 +12,18 @@ public static class GetValueCommand
         var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find'" };
         idOption.Required = true;
         var saveOption = new Option<string?>("--save") { Description = "Store the retrieved value in the session file under this variable name for later use" };
+        var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("get-value", "Get an element's value");
         command.Add(idOption);
         command.Add(saveOption);
+        command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
             var saveName = parseResult.GetValue(saveOption);
+            var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -31,8 +34,9 @@ public static class GetValueCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = CommandHelper.ResolveElement(engine, sessionManager, session, mainWindow, elementId);
+                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));

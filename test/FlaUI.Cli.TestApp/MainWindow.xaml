@@ -4,6 +4,25 @@
         Title="Contact Form" Height="400" Width="400"
         AutomationProperties.AutomationId="MainWindow">
 
+    <DockPanel>
+    <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
+        <MenuItem Header="File" AutomationProperties.AutomationId="FileMenu">
+            <MenuItem Header="New" AutomationProperties.AutomationId="FileNew" Click="MenuItem_Click"/>
+            <MenuItem Header="Open" AutomationProperties.AutomationId="FileOpen" Click="MenuItem_Click"/>
+            <MenuItem Header="Save" AutomationProperties.AutomationId="FileSave" Click="MenuItem_Click"/>
+            <Separator/>
+            <MenuItem Header="Exit" AutomationProperties.AutomationId="FileExit" Click="FileExit_Click"/>
+        </MenuItem>
+        <MenuItem Header="Edit" AutomationProperties.AutomationId="EditMenu">
+            <MenuItem Header="Cut" AutomationProperties.AutomationId="EditCut" Click="MenuItem_Click"/>
+            <MenuItem Header="Copy" AutomationProperties.AutomationId="EditCopy" Click="MenuItem_Click"/>
+            <MenuItem Header="Paste" AutomationProperties.AutomationId="EditPaste" Click="MenuItem_Click"/>
+        </MenuItem>
+        <MenuItem Header="Help" AutomationProperties.AutomationId="HelpMenu">
+            <MenuItem Header="About" AutomationProperties.AutomationId="HelpAbout" Click="MenuItem_Click"/>
+        </MenuItem>
+    </Menu>
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -78,4 +97,5 @@
                    Text="Ready"
                    FontWeight="SemiBold"/>
     </Grid>
+    </DockPanel>
 </Window>

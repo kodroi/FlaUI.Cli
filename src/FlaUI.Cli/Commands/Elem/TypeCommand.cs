@@ -13,15 +13,18 @@ public static class TypeCommand
         idOption.Required = true;
         var textOption = new Option<string>("--text") { Description = "Text string to type into the element via keyboard simulation" };
         textOption.Required = true;
+        var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("type", "Type text into an element");
         command.Add(idOption);
         command.Add(textOption);
+        command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
             var text = parseResult.GetValue(textOption)!;
+            var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -32,8 +35,9 @@ public static class TypeCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = CommandHelper.ResolveElement(engine, sessionManager, session, mainWindow, elementId);
+                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));

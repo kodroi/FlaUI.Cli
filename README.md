@@ -6,7 +6,7 @@ AI coding agents write your code. But when that code has a UI, the agent can't s
 
 <!-- badges -->
 [![Build](https://github.com/kodroi/FlaUI.Cli/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/kodroi/FlaUI.Cli/actions/workflows/build-and-test.yml)
-[![NuGet](https://img.shields.io/nuget/v/FlaUI.Cli)](https://www.nuget.org/packages/FlaUI.Cli)
+[![NuGet](https://img.shields.io/nuget/v/FlaUI.Tool)](https://www.nuget.org/packages/FlaUI.Tool)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A stateless CLI built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI Automation (UIA3). Every command returns structured JSON. Every element selector is quality-rated. The agent drives it the same way it drives `git` or `dotnet` — from the terminal.
@@ -21,8 +21,10 @@ A stateless CLI built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI 
                                     flaui elem type --id a1b2 --text "test@co.com"
                                     flaui elem find --name "Save"
                                     flaui elem click --id c3d4
-5. Agent reads the result:          flaui elem get-value --id a1b2
-6. Agent exports the steps as test: flaui record export --out customer-form-test.json
+5. Agent uses menus and keyboard:   flaui elem menu --path "File > Save As"
+                                    flaui elem keys --keys "ctrl+s"
+6. Agent reads the result:          flaui elem get-value --id a1b2
+7. Agent exports the steps as test: flaui record export --out customer-form-test.json
 ```
 
 ---
@@ -42,7 +44,7 @@ A stateless CLI built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI 
 Requires [.NET 10 SDK](https://dotnet.microsoft.com/download) or later. Windows only.
 
 ```bash
-dotnet tool install --global FlaUI.Cli
+dotnet tool install --global FlaUI.Tool
 ```
 
 ---
@@ -122,19 +124,20 @@ Returns process alive state, window validity, element count, and recording statu
 End the session and optionally close the application.
 
 ```bash
-flaui session end [--close-app]
+flaui session end [--close-app] [--force]
 ```
 
 | Option | Required | Description |
 |--------|----------|-------------|
 | `--close-app` | No | Close the application when ending session |
+| `--force` | No | Force-kill the application process (use with `--close-app` for unresponsive apps) |
 
 ### `elem find`
 
 Find an element by one or more properties. Returns an element ID for use in subsequent commands.
 
 ```bash
-flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [--timeout <ms>]
+flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [--timeout <ms>] [--window <handle>] [--policy <policy>]
 ```
 
 | Option | Required | Description |
@@ -144,6 +147,8 @@ flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [
 | `--type` | No | ControlType to find |
 | `--class` | No | ClassName to find |
 | `--timeout` | No | Search timeout in milliseconds (default: 10000) |
+| `--window` | No | Window handle (hex) to search in instead of the main window |
+| `--policy` | No | Override session selector policy for this command (`stable`, `acceptable`, `fragile`) |
 
 Response includes `selectorQuality` and `selectorStrategy` so the agent knows how reliable the selector is.
 
@@ -244,6 +249,71 @@ Get an element's toggle/check state, enabled status, and visibility.
 flaui elem get-state --id <id>
 ```
 
+### `elem keys`
+
+Send keyboard input (key combinations or single keys).
+
+```bash
+flaui elem keys --keys <keys> [--id <id>] [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--keys` | Yes | Key combination (e.g. `ctrl+shift+s`, `tab`, `alt+f4`) |
+| `--id` | No | Element ID to focus before sending keys |
+| `--window` | No | Window handle (hex) to target |
+
+Supported keys: `ctrl`, `alt`, `shift`, `tab`, `escape`/`esc`, `enter`/`return`, `space`, `delete`/`del`, `backspace`, `up`/`down`/`left`/`right`, `home`, `end`, `pageup`, `pagedown`, `f1`-`f24`, `a`-`z`, `0`-`9`.
+
+### `elem menu`
+
+Navigate and click a menu item by path.
+
+```bash
+flaui elem menu --path <path> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--path` | Yes | Menu path with `>` separators (e.g. `"File > Save As"`) |
+| `--window` | No | Window handle (hex) to target |
+
+### `window list`
+
+List all top-level windows for the attached application.
+
+```bash
+flaui window list
+```
+
+Returns an array of windows with handle (hex), title, isModal, className, and bounds.
+
+### `window focus`
+
+Bring a window to the foreground.
+
+```bash
+flaui window focus --handle <handle>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--handle` | Yes | Window handle as hex string (from `window list`) |
+
+### `window close`
+
+Close a window by handle or title.
+
+```bash
+flaui window close [--handle <handle>] [--title <title>] [--force]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--handle` | One of two | Window handle as hex string |
+| `--title` | One of two | Window title (partial, case-insensitive) |
+| `--force` | No | Force-kill the window's process if graceful close fails |
+
 ### `wait`
 
 Wait for an element condition to be met.
@@ -326,6 +396,38 @@ flaui audit [--window <id>] [--recording] [--out <path>]
 | `--out` | No | Write audit report to file |
 
 Returns total elements, AutomationId coverage, selector quality distribution, and a list of issues (interactive controls with weak selectors).
+
+### `batch`
+
+Execute multiple commands in a single session (one process attach, shared element state).
+
+```bash
+flaui batch --file <path> [--continue-on-error]
+flaui batch --steps '<json>' [--continue-on-error]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--file` | One of two | Path to a JSON file with batch steps |
+| `--steps` | One of two | Inline JSON string with batch steps |
+| `--continue-on-error` | No | Continue executing remaining steps after a failure |
+
+**Input format:**
+
+```json
+{
+  "steps": [
+    {"cmd": "elem find", "args": {"aid": "SubmitButton"}},
+    {"cmd": "elem click", "args": {"id": "$prev.elementId"}},
+    {"cmd": "elem keys", "args": {"keys": "ctrl+s"}},
+    {"cmd": "elem menu", "args": {"path": "File > Save As"}}
+  ]
+}
+```
+
+Use `$prev.field` to reference the previous step's result, or `$steps[N].field` to reference step N's result.
+
+Supported commands: `elem find`, `elem click`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `window list`, `window focus`, `window close`.
 
 ---
 

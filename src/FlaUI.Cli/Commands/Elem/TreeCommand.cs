@@ -15,15 +15,18 @@ public static class TreeCommand
             Description = "Maximum levels to descend into the element hierarchy",
             DefaultValueFactory = _ => 3
         };
+        var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("tree", "Dump the element tree as JSON");
         command.Add(rootOption);
         command.Add(depthOption);
+        command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var rootId = parseResult.GetValue(rootOption);
             var depth = parseResult.GetValue(depthOption);
+            var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -34,8 +37,9 @@ public static class TreeCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                FlaUI.Core.AutomationElements.AutomationElement rootElement = mainWindow;
+                FlaUI.Core.AutomationElements.AutomationElement rootElement = targetWindow;
 
                 if (!string.IsNullOrEmpty(rootId))
                 {
@@ -48,7 +52,7 @@ public static class TreeCommand
                     }
 
                     var resolver = engine.CreateSelectorResolver();
-                    var resolved = resolver.Resolve(mainWindow, entry.AutomationId, entry.Name,
+                    var resolved = resolver.Resolve(targetWindow, entry.AutomationId, entry.Name,
                         entry.ControlType, entry.ClassName);
                     if (resolved is null)
                     {

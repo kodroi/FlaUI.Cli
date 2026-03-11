@@ -19,12 +19,17 @@ public static class FindCommand
             DefaultValueFactory = _ => 10000
         };
 
+        var windowOption = CommandHelper.CreateWindowOption();
+        var policyOption = new Option<string?>("--policy") { Description = "Override the session's selector policy for this command only (stable, acceptable, or fragile)" };
+
         var command = new Command("find", "Find an element by properties");
         command.Add(aidOption);
         command.Add(nameOption);
         command.Add(typeOption);
         command.Add(classOption);
         command.Add(timeoutOption);
+        command.Add(windowOption);
+        command.Add(policyOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
@@ -33,6 +38,8 @@ public static class FindCommand
             var type = parseResult.GetValue(typeOption);
             var cls = parseResult.GetValue(classOption);
             var timeout = parseResult.GetValue(timeoutOption);
+            var windowHandle = parseResult.GetValue(windowOption);
+            var policy = parseResult.GetValue(policyOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -43,9 +50,10 @@ public static class FindCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
                 var resolver = engine.CreateSelectorResolver();
-                var result = resolver.Resolve(mainWindow, aid, name, type, cls, timeout);
+                var result = resolver.Resolve(targetWindow, aid, name, type, cls, timeout);
 
                 if (result is null)
                 {
@@ -54,11 +62,12 @@ public static class FindCommand
                     return;
                 }
 
-                var policyCheck = SelectorResolver.CheckPolicy(result.Quality, session.SelectorPolicy);
+                var effectivePolicy = policy ?? session.SelectorPolicy;
+                var policyCheck = SelectorResolver.CheckPolicy(result.Quality, effectivePolicy);
                 if (policyCheck != ExitCodes.Success)
                 {
                     JsonOutput.Write(new ErrorResult(false,
-                        $"Selector quality '{result.Quality}' violates policy '{session.SelectorPolicy}'."));
+                        $"Selector quality '{result.Quality}' violates policy '{effectivePolicy}'."));
                     Environment.ExitCode = policyCheck;
                     return;
                 }

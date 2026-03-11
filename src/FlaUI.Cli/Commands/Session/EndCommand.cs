@@ -10,13 +10,16 @@ public static class EndCommand
     public static Command Create(Option<string?> sessionOption)
     {
         var closeAppOption = new Option<bool>("--close-app") { Description = "Also close the target application process when ending the session" };
+        var forceOption = new Option<bool>("--force") { Description = "Force-kill the application process (use with --close-app for unresponsive apps)" };
 
         var command = new Command("end", "End the session");
         command.Add(closeAppOption);
+        command.Add(forceOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var closeApp = parseResult.GetValue(closeAppOption);
+            var force = parseResult.GetValue(forceOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             try
@@ -31,7 +34,7 @@ public static class EndCommand
                     try
                     {
                         engine.Attach(session.Application.Pid);
-                        engine.CloseApplication();
+                        engine.CloseApplication(force);
                     }
                     catch
                     {

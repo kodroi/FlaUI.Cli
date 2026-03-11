@@ -32,4 +32,17 @@ public partial class MainWindow : Window
         AgreeCheckbox.IsChecked = false;
         StatusLabel.Text = "Ready";
     }
+
+    private void MenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.MenuItem menuItem)
+        {
+            StatusLabel.Text = $"Menu: {menuItem.Header}";
+        }
+    }
+
+    private void FileExit_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
 }

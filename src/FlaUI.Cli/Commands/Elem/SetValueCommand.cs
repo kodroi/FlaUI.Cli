@@ -13,15 +13,18 @@ public static class SetValueCommand
         idOption.Required = true;
         var valueOption = new Option<string>("--value") { Description = "Value to set directly via the UIA Value pattern (faster than 'type', but not all controls support it)" };
         valueOption.Required = true;
+        var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("set-value", "Set an element's value via the Value pattern");
         command.Add(idOption);
         command.Add(valueOption);
+        command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
             var value = parseResult.GetValue(valueOption)!;
+            var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -32,8 +35,9 @@ public static class SetValueCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = CommandHelper.ResolveElement(engine, sessionManager, session, mainWindow, elementId);
+                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));

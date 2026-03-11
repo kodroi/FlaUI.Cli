@@ -11,13 +11,16 @@ public static class GetStateCommand
     {
         var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find'. Returns toggle state, enabled/disabled, and visibility" };
         idOption.Required = true;
+        var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("get-state", "Get an element's state");
         command.Add(idOption);
+        command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
+            var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -28,8 +31,9 @@ public static class GetStateCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = CommandHelper.ResolveElement(engine, sessionManager, session, mainWindow, elementId);
+                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));

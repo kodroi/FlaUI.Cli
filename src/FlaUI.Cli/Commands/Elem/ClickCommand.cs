@@ -13,17 +13,20 @@ public static class ClickCommand
         idOption.Required = true;
         var doubleOption = new Option<bool>("--double") { Description = "Perform a double-click instead of a single click" };
         var rightOption = new Option<bool>("--right") { Description = "Perform a right-click (context menu) instead of a left click" };
+        var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("click", "Click an element");
         command.Add(idOption);
         command.Add(doubleOption);
         command.Add(rightOption);
+        command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
             var doubleClick = parseResult.GetValue(doubleOption);
             var rightClick = parseResult.GetValue(rightOption);
+            var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -34,8 +37,9 @@ public static class ClickCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = CommandHelper.ResolveElement(engine, sessionManager, session, mainWindow, elementId);
+                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));

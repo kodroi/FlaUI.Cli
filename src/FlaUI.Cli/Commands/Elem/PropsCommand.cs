@@ -11,13 +11,16 @@ public static class PropsCommand
     {
         var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find'. Returns all UIA properties including bounds, enabled, and offscreen state" };
         idOption.Required = true;
+        var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("props", "Get element properties");
         command.Add(idOption);
+        command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
+            var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -28,8 +31,9 @@ public static class PropsCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
+                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = ResolveElementById(engine, sessionManager, session, mainWindow, elementId);
+                var element = ResolveElementById(engine, sessionManager, session, targetWindow, elementId);
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));

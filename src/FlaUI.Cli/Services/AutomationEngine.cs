@@ -2,6 +2,8 @@ using System.Diagnostics;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
+using FlaUI.Core.Input;
+using FlaUI.Core.WindowsAPI;
 using FlaUI.UIA3;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -234,6 +236,102 @@ public class AutomationEngine : IDisposable
         return BuildTreeRecursive(element, 0, maxDepth, session);
     }
 
+    public Window[] GetAllTopLevelWindows()
+    {
+        if (_application is null)
+            throw new InvalidOperationException("No application attached.");
+
+        return _application.GetAllTopLevelWindows(_automation);
+    }
+
+    public Window? GetWindowByHandle(long handle)
+    {
+        var windows = GetAllTopLevelWindows();
+        return windows.FirstOrDefault(w =>
+            w.Properties.NativeWindowHandle.ValueOrDefault.ToInt64() == handle);
+    }
+
+    public AutomationElement ResolveWindow(long? windowHandle)
+    {
+        if (windowHandle is null)
+            return GetMainWindow();
+
+        var window = GetWindowByHandle(windowHandle.Value);
+        if (window is null)
+            throw new InvalidOperationException($"Window with handle 0x{windowHandle.Value:X} not found.");
+
+        return window;
+    }
+
+    public void SendKeys(VirtualKeyShort[] keys, AutomationElement? target = null)
+    {
+        if (target is not null)
+        {
+            EnsureInteractable(target);
+            target.Focus();
+            Thread.Sleep(50);
+        }
+
+        Keyboard.TypeSimultaneously(keys);
+        Thread.Sleep(100);
+    }
+
+    public AutomationElement? NavigateMenu(AutomationElement window, string[] pathSegments)
+    {
+        AutomationElement? currentScope = window;
+        AutomationElement? lastItem = null;
+
+        // Find MenuBar first
+        var menuBar = window.FindFirstDescendant(
+            _automation.ConditionFactory.ByControlType(ControlType.MenuBar));
+
+        if (menuBar is not null)
+            currentScope = menuBar;
+
+        for (int i = 0; i < pathSegments.Length; i++)
+        {
+            var segmentName = pathSegments[i].Trim();
+            var isLast = i == pathSegments.Length - 1;
+
+            var menuItem = FindMenuItem(currentScope!, segmentName);
+
+            // If not found in current scope, search all top-level windows (popup menus)
+            if (menuItem is null && _application is not null)
+            {
+                foreach (var topWindow in _application.GetAllTopLevelWindows(_automation))
+                {
+                    menuItem = FindMenuItem(topWindow, segmentName);
+                    if (menuItem is not null) break;
+                }
+            }
+
+            if (menuItem is null)
+                throw new InvalidOperationException($"Menu item '{segmentName}' not found.");
+
+            if (isLast)
+            {
+                if (menuItem.Patterns.Invoke.IsSupported)
+                    menuItem.Patterns.Invoke.Pattern.Invoke();
+                else
+                    menuItem.Click();
+
+                lastItem = menuItem;
+            }
+            else
+            {
+                if (menuItem.Patterns.ExpandCollapse.IsSupported)
+                    menuItem.Patterns.ExpandCollapse.Pattern.Expand();
+                else
+                    menuItem.Click();
+
+                Thread.Sleep(200);
+                currentScope = menuItem;
+            }
+        }
+
+        return lastItem;
+    }
+
     public void CloseApplication(bool force = false)
     {
         if (_application is null) return;
@@ -333,6 +431,14 @@ public class AutomationEngine : IDisposable
         }
 
         return null;
+    }
+
+    private AutomationElement? FindMenuItem(AutomationElement scope, string name)
+    {
+        var condition = _automation.ConditionFactory.ByControlType(ControlType.MenuItem)
+            .And(_automation.ConditionFactory.ByName(name));
+
+        return scope.FindFirstDescendant(condition);
     }
 
     private static bool IsProcessAlive(int pid)
