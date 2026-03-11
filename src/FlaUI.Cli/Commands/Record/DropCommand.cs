@@ -35,9 +35,9 @@ public static class DropCommand
                 var recordingService = new RecordingService();
 
                 if (seq.HasValue)
-                    recordingService.Drop(session, seq.Value);
+                    RecordingService.Drop(session, seq.Value);
                 else
-                    recordingService.DropLast(session, last ?? 1);
+                    RecordingService.DropLast(session, last ?? 1);
 
                 sessionManager.Save(sessionPath, session);
 

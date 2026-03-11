@@ -22,7 +22,7 @@ public static class StopCommand
                 var session = sessionManager.Load(sessionPath);
 
                 var recordingService = new RecordingService();
-                recordingService.Stop(session);
+                RecordingService.Stop(session);
 
                 sessionManager.Save(sessionPath, session);
 

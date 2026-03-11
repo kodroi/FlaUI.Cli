@@ -5,6 +5,12 @@ namespace FlaUI.Cli.IntegrationTests.Tests;
 [Collection("TestApp")]
 public class BatchTests : IAsyncLifetime
 {
+    private static readonly JsonSerializerOptions BatchJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
     private readonly TestAppFixture _fixture;
     private readonly List<string> _tempFiles = [];
 
@@ -138,11 +144,7 @@ public class BatchTests : IAsyncLifetime
     private string WriteBatchFile(object content)
     {
         var path = Path.Combine(Path.GetTempPath(), $"flaui-batch-{Guid.NewGuid():N}.json");
-        var json = JsonSerializer.Serialize(content, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        });
+        var json = JsonSerializer.Serialize(content, BatchJsonOptions);
         File.WriteAllText(path, json);
         _tempFiles.Add(path);
         return path;

@@ -43,7 +43,7 @@ public static class TreeCommand
 
                 if (!string.IsNullOrEmpty(rootId))
                 {
-                    var entry = sessionManager.GetElement(session, rootId);
+                    var entry = SessionManager.GetElement(session, rootId);
                     if (entry is null)
                     {
                         JsonOutput.Write(new ErrorResult(false, $"Element '{rootId}' not found in session."));
@@ -64,7 +64,7 @@ public static class TreeCommand
                     rootElement = resolved.Element;
                 }
 
-                var tree = engine.BuildTree(rootElement, depth, session);
+                var tree = AutomationEngine.BuildTree(rootElement, depth, session);
                 sessionManager.Save(sessionPath, session);
 
                 JsonOutput.Write(new ElementTreeResult(

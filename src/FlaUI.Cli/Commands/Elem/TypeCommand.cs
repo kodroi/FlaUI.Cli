@@ -45,14 +45,14 @@ public static class TypeCommand
                     return;
                 }
 
-                engine.Type(element, text);
+                AutomationEngine.Type(element, text);
 
                 CommandHelper.RecordStep(session, "elem type", elementId,
                     new Dictionary<string, object?> { ["text"] = text }, true);
 
                 sessionManager.Save(sessionPath, session);
 
-                var entry = sessionManager.GetElement(session, elementId);
+                var entry = SessionManager.GetElement(session, elementId);
                 JsonOutput.Write(new ActionResult(
                     Success: true,
                     Message: "Text typed.",

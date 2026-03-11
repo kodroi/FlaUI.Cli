@@ -52,7 +52,7 @@ public static class SelectCommand
 
                 sessionManager.Save(sessionPath, session);
 
-                var entry = sessionManager.GetElement(session, elementId);
+                var entry = SessionManager.GetElement(session, elementId);
                 JsonOutput.Write(new ActionResult(
                     Success: true,
                     Message: $"Selected '{item}'.",

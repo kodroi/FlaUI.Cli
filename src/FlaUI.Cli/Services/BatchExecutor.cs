@@ -91,7 +91,7 @@ public class BatchExecutor
         var stepMatch = Regex.Match(value, @"^\$steps\[(\d+)\]\.(\w+)$");
         if (stepMatch.Success)
         {
-            var index = int.Parse(stepMatch.Groups[1].Value);
+            var index = int.Parse(stepMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
             if (index >= 0 && index < _stepResults.Count)
             {
                 return ExtractField(_stepResults[index], stepMatch.Groups[2].Value) ?? value;
@@ -105,7 +105,7 @@ public class BatchExecutor
     {
         var windowHandle = args.GetValueOrDefault("window");
         var targetWindow = !string.IsNullOrEmpty(windowHandle)
-            ? _engine.ResolveWindow(long.Parse(windowHandle, System.Globalization.NumberStyles.HexNumber))
+            ? _engine.ResolveWindow(long.Parse(windowHandle, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture))
             : _mainWindow;
 
         return cmd switch
@@ -144,7 +144,7 @@ public class BatchExecutor
         var element = result.Element;
         var bounds = element.BoundingRectangle;
 
-        _sessionManager.AddElement(_session, elementId, new ElementEntry
+        SessionManager.AddElement(_session, elementId, new ElementEntry
         {
             AutomationId = element.Properties.AutomationId.ValueOrDefault,
             Name = element.Properties.Name.ValueOrDefault,
@@ -169,9 +169,9 @@ public class BatchExecutor
         var element = ResolveElement(window, id);
         var dbl = args.GetValueOrDefault("double") == "true";
         var right = args.GetValueOrDefault("right") == "true";
-        _engine.Click(element, dbl, right);
+        AutomationEngine.Click(element, dbl, right);
 
-        var entry = _sessionManager.GetElement(_session, id);
+        var entry = SessionManager.GetElement(_session, id);
         return new ActionResult(true, "Clicked.", id, entry?.SelectorQuality);
     }
 
@@ -179,9 +179,9 @@ public class BatchExecutor
     {
         var id = args["id"];
         var element = ResolveElement(window, id);
-        _engine.Type(element, args["text"]);
+        AutomationEngine.Type(element, args["text"]);
 
-        var entry = _sessionManager.GetElement(_session, id);
+        var entry = SessionManager.GetElement(_session, id);
         return new ActionResult(true, "Text typed.", id, entry?.SelectorQuality);
     }
 
@@ -191,7 +191,7 @@ public class BatchExecutor
         var element = ResolveElement(window, id);
         _engine.Select(element, args["item"]);
 
-        var entry = _sessionManager.GetElement(_session, id);
+        var entry = SessionManager.GetElement(_session, id);
         return new ActionResult(true, $"Selected '{args["item"]}'.", id, entry?.SelectorQuality);
     }
 
@@ -199,9 +199,9 @@ public class BatchExecutor
     {
         var id = args["id"];
         var element = ResolveElement(window, id);
-        _engine.SetValue(element, args["value"]);
+        AutomationEngine.SetValue(element, args["value"]);
 
-        var entry = _sessionManager.GetElement(_session, id);
+        var entry = SessionManager.GetElement(_session, id);
         return new ActionResult(true, "Value set.", id, entry?.SelectorQuality);
     }
 
@@ -209,11 +209,11 @@ public class BatchExecutor
     {
         var id = args["id"];
         var element = ResolveElement(window, id);
-        var value = _engine.GetValue(element);
+        var value = AutomationEngine.GetValue(element);
 
         var saveName = args.GetValueOrDefault("save");
         if (!string.IsNullOrEmpty(saveName) && value is not null)
-            _sessionManager.SetVariable(_session, saveName, value);
+            SessionManager.SetVariable(_session, saveName, value);
 
         return new GetValueResult(true, "Value retrieved.", id, value, saveName);
     }
@@ -222,7 +222,7 @@ public class BatchExecutor
     {
         var id = args["id"];
         var element = ResolveElement(window, id);
-        return _engine.GetState(element, id);
+        return AutomationEngine.GetState(element, id);
     }
 
     private KeysResult DispatchKeys(Dictionary<string, string> args, AutomationElement window)
@@ -235,7 +235,7 @@ public class BatchExecutor
             target = ResolveElement(window, id);
 
         var keys = KeyParser.Parse(keysStr);
-        _engine.SendKeys(keys, target);
+        AutomationEngine.SendKeys(keys, target);
 
         return new KeysResult(true, $"Keys '{keysStr}' sent.", keysStr, id);
     }
@@ -268,7 +268,7 @@ public class BatchExecutor
 
     private WindowFocusResult DispatchWindowFocus(Dictionary<string, string> args)
     {
-        var handle = long.Parse(args["handle"], System.Globalization.NumberStyles.HexNumber);
+        var handle = long.Parse(args["handle"], System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture);
         var window = _engine.GetWindowByHandle(handle)
             ?? throw new InvalidOperationException($"Window with handle 0x{args["handle"]} not found.");
 
@@ -288,7 +288,7 @@ public class BatchExecutor
 
         if (!string.IsNullOrEmpty(handleStr))
         {
-            var handle = long.Parse(handleStr, System.Globalization.NumberStyles.HexNumber);
+            var handle = long.Parse(handleStr, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture);
             window = _engine.GetWindowByHandle(handle);
         }
         else if (!string.IsNullOrEmpty(title))
@@ -309,7 +309,7 @@ public class BatchExecutor
 
     private AutomationElement ResolveElement(AutomationElement window, string elementId)
     {
-        var entry = _sessionManager.GetElement(_session, elementId)
+        var entry = SessionManager.GetElement(_session, elementId)
             ?? throw new InvalidOperationException($"Element '{elementId}' not found in session.");
 
         var resolver = _engine.CreateSelectorResolver();

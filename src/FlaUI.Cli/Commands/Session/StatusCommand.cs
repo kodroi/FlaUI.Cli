@@ -21,8 +21,8 @@ public static class StatusCommand
                 var sessionManager = new SessionManager();
                 var session = sessionManager.Load(sessionPath);
 
-                var processAlive = sessionManager.IsProcessAlive(session);
-                var windowValid = sessionManager.IsWindowValid(session);
+                var processAlive = SessionManager.IsProcessAlive(session);
+                var windowValid = SessionManager.IsWindowValid(session);
 
                 JsonOutput.Write(new SessionStatusResult(
                     Success: true,

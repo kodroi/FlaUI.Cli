@@ -30,7 +30,7 @@ public static class FocusWindowCommand
                 var session = sessionManager.Load(sessionPath);
                 engine.ReattachFromSession(session);
 
-                var handle = long.Parse(handleStr, NumberStyles.HexNumber);
+                var handle = long.Parse(handleStr, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                 var window = engine.GetWindowByHandle(handle);
                 if (window is null)
                 {

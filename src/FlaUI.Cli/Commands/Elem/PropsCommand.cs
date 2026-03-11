@@ -77,7 +77,7 @@ public static class PropsCommand
         FlaUI.Core.AutomationElements.AutomationElement mainWindow,
         string elementId)
     {
-        var entry = sessionManager.GetElement(session, elementId);
+        var entry = SessionManager.GetElement(session, elementId);
         if (entry is null) return null;
 
         var resolver = engine.CreateSelectorResolver();

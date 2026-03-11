@@ -27,7 +27,7 @@ public static class ExportCommand
                 var session = sessionManager.Load(sessionPath);
 
                 var recordingService = new RecordingService();
-                var exportResult = recordingService.Export(session);
+                var exportResult = RecordingService.Export(session);
 
                 File.WriteAllText(Path.GetFullPath(outPath), JsonOutput.Serialize(exportResult));
 

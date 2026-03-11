@@ -25,7 +25,7 @@ internal static class CommandHelper
         if (string.IsNullOrEmpty(windowHandle))
             return mainWindow;
 
-        var handle = long.Parse(windowHandle, NumberStyles.HexNumber);
+        var handle = long.Parse(windowHandle, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         return engine.ResolveWindow(handle);
     }
 
@@ -36,7 +36,7 @@ internal static class CommandHelper
         AutomationElement mainWindow,
         string elementId)
     {
-        var entry = sessionManager.GetElement(session, elementId);
+        var entry = SessionManager.GetElement(session, elementId);
         if (entry is null) return null;
 
         var resolver = engine.CreateSelectorResolver();
@@ -60,7 +60,7 @@ internal static class CommandHelper
         var entry = session.Elements.GetValueOrDefault(elementId);
         var recordingService = new RecordingService();
 
-        recordingService.AddStep(session, new RecordingStep
+        RecordingService.AddStep(session, new RecordingStep
         {
             Command = command,
             Target = entry is not null

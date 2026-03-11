@@ -22,7 +22,7 @@ public static class ListCommand
                 var session = sessionManager.Load(sessionPath);
 
                 var recordingService = new RecordingService();
-                var steps = recordingService.List(session);
+                var steps = RecordingService.List(session);
 
                 JsonOutput.Write(new RecordListResult(
                     Success: true,

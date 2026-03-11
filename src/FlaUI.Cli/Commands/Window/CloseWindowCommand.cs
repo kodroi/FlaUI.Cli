@@ -46,7 +46,7 @@ public static class CloseWindowCommand
 
                 if (!string.IsNullOrEmpty(handleStr))
                 {
-                    var handle = long.Parse(handleStr, NumberStyles.HexNumber);
+                    var handle = long.Parse(handleStr, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                     window = engine.GetWindowByHandle(handle);
                 }
                 else if (!string.IsNullOrEmpty(title))
@@ -71,7 +71,7 @@ public static class CloseWindowCommand
                 if (force)
                 {
                     Thread.Sleep(500);
-                    var hwnd = new IntPtr(long.Parse(closedHandle, NumberStyles.HexNumber));
+                    var hwnd = new IntPtr(long.Parse(closedHandle, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
                     if (NativeInterop.IsWindow(hwnd))
                     {
                         engine.CloseApplication(force: true);

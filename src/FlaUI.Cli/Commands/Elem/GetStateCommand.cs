@@ -41,7 +41,7 @@ public static class GetStateCommand
                     return;
                 }
 
-                var state = engine.GetState(element, elementId);
+                var state = AutomationEngine.GetState(element, elementId);
 
                 CommandHelper.RecordStep(session, "elem get-state", elementId, null, true);
                 sessionManager.Save(sessionPath, session);

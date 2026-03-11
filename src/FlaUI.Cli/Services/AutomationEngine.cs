@@ -103,7 +103,7 @@ public class AutomationEngine : IDisposable
         return window ?? throw new InvalidOperationException("Could not find main window.");
     }
 
-    public void EnsureInteractable(AutomationElement element)
+    public static void EnsureInteractable(AutomationElement element)
     {
         var window = GetParentWindow(element);
         if (window is null) return;
@@ -116,7 +116,7 @@ public class AutomationEngine : IDisposable
         Thread.Sleep(100);
     }
 
-    public void Click(AutomationElement element, bool doubleClick = false, bool rightClick = false)
+    public static void Click(AutomationElement element, bool doubleClick = false, bool rightClick = false)
     {
         EnsureInteractable(element);
         if (doubleClick)
@@ -128,7 +128,7 @@ public class AutomationEngine : IDisposable
         Thread.Sleep(100);
     }
 
-    public void Type(AutomationElement element, string text)
+    public static void Type(AutomationElement element, string text)
     {
         EnsureInteractable(element);
         element.Focus();
@@ -146,7 +146,7 @@ public class AutomationEngine : IDisposable
         Thread.Sleep(100);
     }
 
-    public void SetValue(AutomationElement element, string value)
+    public static void SetValue(AutomationElement element, string value)
     {
         EnsureInteractable(element);
 
@@ -195,7 +195,7 @@ public class AutomationEngine : IDisposable
         Thread.Sleep(100);
     }
 
-    public string? GetValue(AutomationElement element)
+    public static string? GetValue(AutomationElement element)
     {
         if (element.Patterns.Value.IsSupported)
             return element.Patterns.Value.Pattern.Value.Value;
@@ -209,7 +209,7 @@ public class AutomationEngine : IDisposable
         return element.Name;
     }
 
-    public GetStateResult GetState(AutomationElement element, string elementId)
+    public static GetStateResult GetState(AutomationElement element, string elementId)
     {
         string? toggleState = null;
         if (element.Patterns.Toggle.IsSupported)
@@ -231,7 +231,7 @@ public class AutomationEngine : IDisposable
             ExpandState: expandState);
     }
 
-    public TreeNode BuildTree(AutomationElement element, int maxDepth, SessionFile session)
+    public static TreeNode BuildTree(AutomationElement element, int maxDepth, SessionFile session)
     {
         return BuildTreeRecursive(element, 0, maxDepth, session);
     }
@@ -263,7 +263,7 @@ public class AutomationEngine : IDisposable
         return window;
     }
 
-    public void SendKeys(VirtualKeyShort[] keys, AutomationElement? target = null)
+    public static void SendKeys(VirtualKeyShort[] keys, AutomationElement? target = null)
     {
         if (target is not null)
         {
@@ -348,9 +348,10 @@ public class AutomationEngine : IDisposable
     {
         _application?.Dispose();
         _automation.Dispose();
+        GC.SuppressFinalize(this);
     }
 
-    private TreeNode BuildTreeRecursive(AutomationElement element, int depth, int maxDepth, SessionFile session)
+    private static TreeNode BuildTreeRecursive(AutomationElement element, int depth, int maxDepth, SessionFile session)
     {
         var elementId = GenerateElementId();
         var entry = new ElementEntry

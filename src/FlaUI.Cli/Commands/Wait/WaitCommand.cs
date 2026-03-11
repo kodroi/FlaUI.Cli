@@ -53,7 +53,7 @@ public static class WaitCommand
 
                         if (expectedValue is not null)
                         {
-                            var currentValue = engine.GetValue(element);
+                            var currentValue = AutomationEngine.GetValue(element);
                             conditionMet = string.Equals(currentValue, expectedValue,
                                 StringComparison.OrdinalIgnoreCase);
                         }

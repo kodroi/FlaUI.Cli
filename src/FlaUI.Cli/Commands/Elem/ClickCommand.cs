@@ -47,7 +47,7 @@ public static class ClickCommand
                     return;
                 }
 
-                engine.Click(element, doubleClick, rightClick);
+                AutomationEngine.Click(element, doubleClick, rightClick);
 
                 CommandHelper.RecordStep(session, "elem click", elementId,
                     new Dictionary<string, object?> { ["double"] = doubleClick, ["right"] = rightClick },
@@ -55,7 +55,7 @@ public static class ClickCommand
 
                 sessionManager.Save(sessionPath, session);
 
-                var entry = sessionManager.GetElement(session, elementId);
+                var entry = SessionManager.GetElement(session, elementId);
                 JsonOutput.Write(new ActionResult(
                     Success: true,
                     Message: "Clicked.",

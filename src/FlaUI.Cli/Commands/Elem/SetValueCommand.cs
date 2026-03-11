@@ -45,14 +45,14 @@ public static class SetValueCommand
                     return;
                 }
 
-                engine.SetValue(element, value);
+                AutomationEngine.SetValue(element, value);
 
                 CommandHelper.RecordStep(session, "elem set-value", elementId,
                     new Dictionary<string, object?> { ["value"] = value }, true);
 
                 sessionManager.Save(sessionPath, session);
 
-                var entry = sessionManager.GetElement(session, elementId);
+                var entry = SessionManager.GetElement(session, elementId);
                 JsonOutput.Write(new ActionResult(
                     Success: true,
                     Message: "Value set.",

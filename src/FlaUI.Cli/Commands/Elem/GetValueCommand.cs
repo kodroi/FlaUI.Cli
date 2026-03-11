@@ -44,10 +44,10 @@ public static class GetValueCommand
                     return;
                 }
 
-                var value = engine.GetValue(element);
+                var value = AutomationEngine.GetValue(element);
 
                 if (!string.IsNullOrEmpty(saveName) && value is not null)
-                    sessionManager.SetVariable(session, saveName, value);
+                    SessionManager.SetVariable(session, saveName, value);
 
                 CommandHelper.RecordStep(session, "elem get-value", elementId,
                     new Dictionary<string, object?> { ["save"] = saveName }, true, value);

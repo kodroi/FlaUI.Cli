@@ -26,7 +26,7 @@ public static class StartCommand
                 var session = sessionManager.Load(sessionPath);
 
                 var recordingService = new RecordingService();
-                recordingService.Start(session, description);
+                RecordingService.Start(session, description);
 
                 sessionManager.Save(sessionPath, session);
 

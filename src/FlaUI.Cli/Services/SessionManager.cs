@@ -51,7 +51,7 @@ public class SessionManager
         JsonSerializer.Serialize(stream, session, _jsonOptions);
     }
 
-    public bool IsProcessAlive(SessionFile session)
+    public static bool IsProcessAlive(SessionFile session)
     {
         try
         {
@@ -64,7 +64,7 @@ public class SessionManager
         }
     }
 
-    public bool IsWindowValid(SessionFile session)
+    public static bool IsWindowValid(SessionFile session)
     {
         if (session.Application.MainWindowHandle == 0)
             return false;
@@ -72,22 +72,22 @@ public class SessionManager
         return NativeInterop.IsWindow(new IntPtr(session.Application.MainWindowHandle));
     }
 
-    public void AddElement(SessionFile session, string elementId, ElementEntry entry)
+    public static void AddElement(SessionFile session, string elementId, ElementEntry entry)
     {
         session.Elements[elementId] = entry;
     }
 
-    public ElementEntry? GetElement(SessionFile session, string elementId)
+    public static ElementEntry? GetElement(SessionFile session, string elementId)
     {
         return session.Elements.GetValueOrDefault(elementId);
     }
 
-    public void SetVariable(SessionFile session, string name, string value)
+    public static void SetVariable(SessionFile session, string name, string value)
     {
         session.Variables[name] = value;
     }
 
-    public string? GetVariable(SessionFile session, string name)
+    public static string? GetVariable(SessionFile session, string name)
     {
         return session.Variables.GetValueOrDefault(name);
     }

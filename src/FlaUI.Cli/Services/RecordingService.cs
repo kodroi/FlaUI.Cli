@@ -4,7 +4,7 @@ namespace FlaUI.Cli.Services;
 
 public class RecordingService
 {
-    public void Start(SessionFile session, string? description)
+    public static void Start(SessionFile session, string? description)
     {
         session.Recording = new RecordingState
         {
@@ -15,7 +15,7 @@ public class RecordingService
         };
     }
 
-    public void Stop(SessionFile session)
+    public static void Stop(SessionFile session)
     {
         if (session.Recording is null)
             throw new InvalidOperationException("No recording is active.");
@@ -23,7 +23,7 @@ public class RecordingService
         session.Recording.Active = false;
     }
 
-    public void AddStep(SessionFile session, RecordingStep step)
+    public static void AddStep(SessionFile session, RecordingStep step)
     {
         if (session.Recording is not { Active: true }) return;
 
@@ -34,7 +34,7 @@ public class RecordingService
         session.Recording.Steps.Add(step);
     }
 
-    public void Drop(SessionFile session, int seq)
+    public static void Drop(SessionFile session, int seq)
     {
         if (session.Recording is null)
             throw new InvalidOperationException("No recording exists.");
@@ -44,7 +44,7 @@ public class RecordingService
         step.Included = false;
     }
 
-    public void DropLast(SessionFile session, int count = 1)
+    public static void DropLast(SessionFile session, int count = 1)
     {
         if (session.Recording is null)
             throw new InvalidOperationException("No recording exists.");
@@ -58,7 +58,7 @@ public class RecordingService
             step.Included = false;
     }
 
-    public void Keep(SessionFile session, int seq)
+    public static void Keep(SessionFile session, int seq)
     {
         if (session.Recording is null)
             throw new InvalidOperationException("No recording exists.");
@@ -68,7 +68,7 @@ public class RecordingService
         step.Included = true;
     }
 
-    public List<RecordingStepSummary> List(SessionFile session)
+    public static List<RecordingStepSummary> List(SessionFile session)
     {
         if (session.Recording is null)
             return [];
@@ -81,7 +81,7 @@ public class RecordingService
             s.Included)).ToList();
     }
 
-    public RecordExportResult Export(SessionFile session)
+    public static RecordExportResult Export(SessionFile session)
     {
         if (session.Recording is null)
             throw new InvalidOperationException("No recording exists.");

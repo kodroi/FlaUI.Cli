@@ -27,7 +27,7 @@ public static class KeepCommand
                 var session = sessionManager.Load(sessionPath);
 
                 var recordingService = new RecordingService();
-                recordingService.Keep(session, seq);
+                RecordingService.Keep(session, seq);
 
                 sessionManager.Save(sessionPath, session);
 

@@ -76,7 +76,7 @@ public static class FindCommand
                 var element = result.Element;
                 var bounds = element.BoundingRectangle;
 
-                sessionManager.AddElement(session, elementId, new ElementEntry
+                SessionManager.AddElement(session, elementId, new ElementEntry
                 {
                     AutomationId = element.Properties.AutomationId.ValueOrDefault,
                     Name = element.Properties.Name.ValueOrDefault,
