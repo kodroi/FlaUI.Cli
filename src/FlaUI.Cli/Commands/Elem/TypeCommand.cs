@@ -9,9 +9,9 @@ public static class TypeCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id") { Description = "Element ID" };
+        var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find' (e.g. \"f9d13611\")" };
         idOption.Required = true;
-        var textOption = new Option<string>("--text") { Description = "Text to type" };
+        var textOption = new Option<string>("--text") { Description = "Text string to type into the element via keyboard simulation" };
         textOption.Required = true;
 
         var command = new Command("type", "Type text into an element");

@@ -9,13 +9,13 @@ public static class FindCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var aidOption = new Option<string?>("--aid") { Description = "AutomationId to find" };
-        var nameOption = new Option<string?>("--name") { Description = "Element name to find" };
-        var typeOption = new Option<string?>("--type") { Description = "ControlType to find" };
-        var classOption = new Option<string?>("--class") { Description = "ClassName to find" };
+        var aidOption = new Option<string?>("--aid") { Description = "AutomationId property to match (e.g. \"SubmitButton\"). Preferred — gives 'stable' selector quality" };
+        var nameOption = new Option<string?>("--name") { Description = "Element Name property to match (e.g. \"Submit\"). Gives 'acceptable' selector quality" };
+        var typeOption = new Option<string?>("--type") { Description = "UIA ControlType to match (e.g. \"Button\", \"Edit\", \"ComboBox\")" };
+        var classOption = new Option<string?>("--class") { Description = "WPF/WinForms ClassName to match (e.g. \"TextBox\"). Gives 'fragile' selector quality" };
         var timeoutOption = new Option<int>("--timeout")
         {
-            Description = "Search timeout in milliseconds",
+            Description = "How long to search before giving up, in milliseconds",
             DefaultValueFactory = _ => 10000
         };
 

@@ -9,10 +9,10 @@ public static class DropCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var seqOption = new Option<int?>("--seq") { Description = "Step sequence number to drop" };
+        var seqOption = new Option<int?>("--seq") { Description = "Sequence number of a specific step to exclude (shown in 'record list' output)" };
         var lastOption = new Option<int?>("--last")
         {
-            Description = "Drop last N steps",
+            Description = "Exclude the last N recorded steps. Use instead of --seq to quickly undo recent actions",
             DefaultValueFactory = _ => 1
         };
 

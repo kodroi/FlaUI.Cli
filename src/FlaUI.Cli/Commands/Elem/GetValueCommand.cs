@@ -9,9 +9,9 @@ public static class GetValueCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id") { Description = "Element ID" };
+        var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find'" };
         idOption.Required = true;
-        var saveOption = new Option<string?>("--save") { Description = "Save value to session variable" };
+        var saveOption = new Option<string?>("--save") { Description = "Store the retrieved value in the session file under this variable name for later use" };
 
         var command = new Command("get-value", "Get an element's value");
         command.Add(idOption);

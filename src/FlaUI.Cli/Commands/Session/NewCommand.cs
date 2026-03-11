@@ -9,12 +9,12 @@ public static class NewCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var appOption = new Option<string>("--app") { Description = "Path to the application executable" };
+        var appOption = new Option<string>("--app") { Description = "Full or relative path to the .exe to launch (e.g. \"C:\\Apps\\MyApp.exe\")" };
         appOption.Required = true;
-        var argsOption = new Option<string?>("--args") { Description = "Arguments to pass to the application" };
+        var argsOption = new Option<string?>("--args") { Description = "Command-line arguments forwarded to the application (e.g. \"--config prod.json\")" };
         var policyOption = new Option<string>("--selector-policy")
         {
-            Description = "Selector quality policy: stable, acceptable, fragile",
+            Description = "Minimum selector quality allowed: 'stable' (AutomationId required), 'acceptable' (Name ok), or 'fragile' (ClassName ok)",
             DefaultValueFactory = _ => "stable"
         };
 

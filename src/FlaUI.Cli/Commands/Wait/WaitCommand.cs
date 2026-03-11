@@ -10,11 +10,11 @@ public static class WaitCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var aidOption = new Option<string>("--aid") { Description = "AutomationId to wait for" };
+        var aidOption = new Option<string>("--aid") { Description = "AutomationId of the element to wait for (e.g. \"StatusLabel\")" };
         aidOption.Required = true;
-        var valueOption = new Option<string?>("--value") { Description = "Wait until element has this value" };
-        var stateOption = new Option<string?>("--state") { Description = "Wait for state: hidden, visible, enabled" };
-        var timeoutOption = new Option<int>("--timeout") { Description = "Timeout in milliseconds" };
+        var valueOption = new Option<string?>("--value") { Description = "Wait until the element's value equals this text (case-insensitive comparison)" };
+        var stateOption = new Option<string?>("--state") { Description = "Wait for a UI state: 'visible' (on-screen), 'hidden' (off-screen or gone), or 'enabled' (interactable)" };
+        var timeoutOption = new Option<int>("--timeout") { Description = "Maximum time to wait in milliseconds. Fails with exit code 1 if exceeded" };
         timeoutOption.Required = true;
 
         var command = new Command("wait", "Wait for an element condition");

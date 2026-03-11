@@ -9,7 +9,7 @@ public static class StartCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var descOption = new Option<string?>("--description") { Description = "Recording description" };
+        var descOption = new Option<string?>("--description") { Description = "Human-readable label for this recording session (e.g. \"Login flow test\")" };
 
         var command = new Command("start", "Start recording interactions");
         command.Add(descOption);

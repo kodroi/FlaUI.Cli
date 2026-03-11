@@ -9,7 +9,7 @@ public static class PropsCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id") { Description = "Element ID" };
+        var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find'. Returns all UIA properties including bounds, enabled, and offscreen state" };
         idOption.Required = true;
 
         var command = new Command("props", "Get element properties");

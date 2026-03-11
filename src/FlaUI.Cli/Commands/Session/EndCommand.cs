@@ -9,7 +9,7 @@ public static class EndCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var closeAppOption = new Option<bool>("--close-app") { Description = "Close the application when ending session" };
+        var closeAppOption = new Option<bool>("--close-app") { Description = "Also close the target application process when ending the session" };
 
         var command = new Command("end", "End the session");
         command.Add(closeAppOption);
