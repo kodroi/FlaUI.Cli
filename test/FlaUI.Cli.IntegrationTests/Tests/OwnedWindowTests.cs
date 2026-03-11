@@ -119,6 +119,45 @@ public class OwnedWindowTests
         }
     }
 
+    [Fact]
+    public async Task WindowClose_ByTitle_ClosesOnlyChildWindow_NotMainWindow()
+    {
+        // Open the About dialog (owned window)
+        await _fixture.Cli.RunAsync($"elem menu --path \"Help > About\" {_fixture.SessionArg}");
+        await Task.Delay(500);
+
+        try
+        {
+            // Close the About dialog by title
+            var closeResult = await _fixture.Cli.RunAsync($"window close --title \"About\" {_fixture.SessionArg}");
+            Assert.Equal(0, closeResult.ExitCode);
+
+            var closed = CliRunner.Deserialize<WindowCloseResult>(closeResult.Stdout);
+            Assert.NotNull(closed);
+            Assert.True(closed.Success);
+
+            await Task.Delay(300);
+
+            // Verify main window is still present and About dialog is gone
+            var listResult = await _fixture.Cli.RunAsync($"window list {_fixture.SessionArg}");
+            Assert.Equal(0, listResult.ExitCode);
+
+            var windowList = CliRunner.Deserialize<WindowListResult>(listResult.Stdout);
+            Assert.NotNull(windowList?.Windows);
+
+            var mainWindow = windowList.Windows.FirstOrDefault(w => w.Title == "Contact Form");
+            Assert.NotNull(mainWindow);
+
+            var aboutWindow = windowList.Windows.FirstOrDefault(w => w.Title == "About");
+            Assert.Null(aboutWindow);
+        }
+        finally
+        {
+            // Cleanup: if About dialog still exists (test failure path), close it
+            await CloseAboutDialog();
+        }
+    }
+
     private async Task CloseAboutDialog()
     {
         try

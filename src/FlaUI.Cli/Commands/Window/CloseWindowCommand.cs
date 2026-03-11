@@ -63,15 +63,15 @@ public static class CloseWindowCommand
                     return;
                 }
 
-                var closedHandle = $"{window.Properties.NativeWindowHandle.ValueOrDefault.ToInt64():X}";
+                var hwnd = window.Properties.NativeWindowHandle.ValueOrDefault;
+                var closedHandle = $"{hwnd.ToInt64():X}";
                 var closedTitle = window.Title;
 
-                window.Close();
+                NativeInterop.CloseWindow(hwnd);
 
                 if (force)
                 {
                     Thread.Sleep(500);
-                    var hwnd = new IntPtr(long.Parse(closedHandle, NumberStyles.HexNumber, CultureInfo.InvariantCulture));
                     if (NativeInterop.IsWindow(hwnd))
                     {
                         engine.CloseApplication(force: true);

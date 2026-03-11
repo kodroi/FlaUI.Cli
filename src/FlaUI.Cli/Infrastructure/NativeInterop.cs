@@ -31,6 +31,16 @@ public static partial class NativeInterop
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool IsWindowVisible(IntPtr hWnd);
 
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    private const uint WmClose = 0x0010;
+
+    public static void CloseWindow(IntPtr hWnd)
+    {
+        SendMessage(hWnd, WmClose, IntPtr.Zero, IntPtr.Zero);
+    }
+
     public static void BringToFront(IntPtr hWnd)
     {
         ShowWindow(hWnd, SwRestore);
