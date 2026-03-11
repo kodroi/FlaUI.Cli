@@ -308,6 +308,80 @@ flaui elem scroll-into-view --id <id> [--window <handle>]
 
 Returns `scrolled: true` if the element supported the ScrollItem pattern and was scrolled, or `scrolled: false` if the pattern is not supported. This is also called automatically by `elem click`, `elem type`, and other interaction commands.
 
+### `elem get-range`
+
+Get an element's range value, minimum, maximum, and step sizes via the RangeValue pattern (Slider, SpinButton).
+
+```bash
+flaui elem get-range --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns `value`, `minimum`, `maximum`, `smallChange`, and `largeChange`.
+
+### `elem set-range`
+
+Set an element's value via the RangeValue pattern. Validates that the value is within the element's min/max bounds.
+
+```bash
+flaui elem set-range --id <id> --value <value> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--value` | Yes | Numeric value to set (must be within the element's min/max range) |
+| `--window` | No | Window handle (hex) to target |
+
+### `elem grid-info`
+
+Get row count, column count, and column headers from a Grid/Table element (DataGrid, Table).
+
+```bash
+flaui elem grid-info --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns `rowCount`, `columnCount`, and `columnHeaders` (if the element supports the Table pattern).
+
+### `elem get-cell`
+
+Get the value of a cell in a Grid element by row and column index.
+
+```bash
+flaui elem get-cell --id <id> --row <row> --column <column> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--row` | Yes | Row index (0-based) |
+| `--column` | Yes | Column index (0-based) |
+| `--window` | No | Window handle (hex) to target |
+
+### `elem get-text`
+
+Get the full text content of an element via the Text pattern (RichTextBox, Document).
+
+```bash
+flaui elem get-text --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns the full text content of the element's document range.
+
 ### `window list`
 
 List all top-level windows for the attached application.
@@ -489,7 +563,7 @@ flaui batch --steps '<json>' [--continue-on-error]
 
 Use `$prev.field` to reference the previous step's result, or `$steps[N].field` to reference step N's result.
 
-Supported commands: `elem find`, `elem click`, `elem clear`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `window list`, `window focus`, `window close`, `screenshot`.
+Supported commands: `elem find`, `elem click`, `elem clear`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `elem get-range`, `elem set-range`, `elem grid-info`, `elem get-cell`, `elem get-text`, `window list`, `window focus`, `window close`, `screenshot`.
 
 ---
 

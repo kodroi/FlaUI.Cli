@@ -122,14 +122,10 @@ public class AutomationEngine : IDisposable
     {
         EnsureInteractable(element);
 
-        // For single left-clicks, prefer UIA patterns over mouse simulation
-        // when the element supports ExpandCollapse or Toggle. This avoids the
-        // "show desktop" race condition where FlaUI's mouse-based Click()
-        // moves the cursor to cached screen coordinates but the terminal
-        // steals focus before the click lands.
-        // Note: we intentionally skip Invoke — WPF toolbar buttons report
-        // Invoke support but the pattern shows the tooltip rather than
-        // firing the button's click handler.
+        // For single left-clicks, prefer UIA patterns over mouse simulation.
+        // This avoids the "show desktop" race condition where FlaUI's
+        // mouse-based Click() moves the cursor to cached screen coordinates
+        // but the terminal steals focus before the click lands.
         if (!doubleClick && !rightClick)
         {
             if (element.Patterns.ExpandCollapse.IsSupported)
@@ -146,6 +142,16 @@ public class AutomationEngine : IDisposable
             if (element.Patterns.Toggle.IsSupported)
             {
                 element.Patterns.Toggle.Pattern.Toggle();
+                Thread.Sleep(100);
+                return;
+            }
+
+            // Use Invoke for buttons — more reliable than mouse simulation.
+            // Skip toolbar buttons which may show tooltips instead of firing.
+            if (element.Patterns.Invoke.IsSupported
+                && element.ControlType == ControlType.Button)
+            {
+                element.Patterns.Invoke.Pattern.Invoke();
                 Thread.Sleep(100);
                 return;
             }
@@ -234,6 +240,23 @@ public class AutomationEngine : IDisposable
             if (itemElement is not null) break;
         }
 
+        // Fallback: try ItemContainerPattern for virtualized items
+        if (itemElement is null && element.Patterns.ItemContainer.IsSupported)
+        {
+            var container = element.Patterns.ItemContainer.Pattern;
+            var virtualized = container.FindItemByProperty(null,
+                _automation.PropertyLibrary.Element.Name, item);
+
+            if (virtualized is not null)
+            {
+                if (virtualized.Patterns.VirtualizedItem.IsSupported)
+                    virtualized.Patterns.VirtualizedItem.Pattern.Realize();
+
+                Thread.Sleep(100);
+                itemElement = virtualized;
+            }
+        }
+
         if (itemElement is null)
             throw new InvalidOperationException($"Item '{item}' not found in element.");
 
@@ -295,6 +318,104 @@ public class AutomationEngine : IDisposable
             HasFocus: element.Properties.HasKeyboardFocus.ValueOrDefault,
             ToggleState: toggleState,
             ExpandState: expandState);
+    }
+
+    public static GetRangeResult GetRangeValue(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.RangeValue.IsSupported)
+            throw new InvalidOperationException("Element does not support the RangeValue pattern.");
+
+        var pattern = element.Patterns.RangeValue.Pattern;
+        return new GetRangeResult(
+            Success: true,
+            Message: "Range value retrieved.",
+            ElementId: elementId,
+            Value: pattern.Value.Value,
+            Minimum: pattern.Minimum.Value,
+            Maximum: pattern.Maximum.Value,
+            SmallChange: pattern.SmallChange.Value,
+            LargeChange: pattern.LargeChange.Value);
+    }
+
+    public static void SetRangeValue(AutomationElement element, double value)
+    {
+        EnsureInteractable(element);
+
+        if (!element.Patterns.RangeValue.IsSupported)
+            throw new InvalidOperationException("Element does not support the RangeValue pattern.");
+
+        var pattern = element.Patterns.RangeValue.Pattern;
+        var min = pattern.Minimum.Value;
+        var max = pattern.Maximum.Value;
+
+        if (value < min || value > max)
+            throw new InvalidOperationException($"Value {value} is out of range [{min}, {max}].");
+
+        pattern.SetValue(value);
+        Thread.Sleep(100);
+    }
+
+    public static GridInfoResult GetGridInfo(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.Grid.IsSupported)
+            throw new InvalidOperationException("Element does not support the Grid pattern.");
+
+        var grid = element.Patterns.Grid.Pattern;
+        var rowCount = grid.RowCount.Value;
+        var colCount = grid.ColumnCount.Value;
+
+        string[]? headers = null;
+        if (element.Patterns.Table.IsSupported)
+        {
+            var table = element.Patterns.Table.Pattern;
+            var headerElements = table.ColumnHeaders.Value;
+            headers = headerElements.Select(h => h.Name).ToArray();
+        }
+
+        return new GridInfoResult(
+            Success: true,
+            Message: "Grid info retrieved.",
+            ElementId: elementId,
+            RowCount: rowCount,
+            ColumnCount: colCount,
+            ColumnHeaders: headers);
+    }
+
+    public static GetCellResult GetGridCell(AutomationElement element, string elementId, int row, int column)
+    {
+        if (!element.Patterns.Grid.IsSupported)
+            throw new InvalidOperationException("Element does not support the Grid pattern.");
+
+        var grid = element.Patterns.Grid.Pattern;
+        var cell = grid.GetItem(row, column);
+
+        if (cell is null)
+            throw new InvalidOperationException($"Cell at row {row}, column {column} not found.");
+
+        var cellValue = GetValue(cell);
+
+        return new GetCellResult(
+            Success: true,
+            Message: "Cell value retrieved.",
+            ElementId: elementId,
+            Row: row,
+            Column: column,
+            Value: cellValue);
+    }
+
+    public static GetTextResult GetText(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.Text.IsSupported)
+            throw new InvalidOperationException("Element does not support the Text pattern.");
+
+        var pattern = element.Patterns.Text.Pattern;
+        var text = pattern.DocumentRange.GetText(-1);
+
+        return new GetTextResult(
+            Success: true,
+            Message: "Text retrieved.",
+            ElementId: elementId,
+            Text: text);
     }
 
     public static TreeNode BuildTree(AutomationElement element, int maxDepth, SessionFile session)
@@ -374,6 +495,24 @@ public class AutomationEngine : IDisposable
         }
 
         Keyboard.TypeSimultaneously(keys);
+        Thread.Sleep(100);
+    }
+
+    public static void Expand(AutomationElement element)
+    {
+        if (!element.Patterns.ExpandCollapse.IsSupported)
+            throw new InvalidOperationException("Element does not support the ExpandCollapse pattern.");
+
+        element.Patterns.ExpandCollapse.Pattern.Expand();
+        Thread.Sleep(100);
+    }
+
+    public static void Collapse(AutomationElement element)
+    {
+        if (!element.Patterns.ExpandCollapse.IsSupported)
+            throw new InvalidOperationException("Element does not support the ExpandCollapse pattern.");
+
+        element.Patterns.ExpandCollapse.Pattern.Collapse();
         Thread.Sleep(100);
     }
 

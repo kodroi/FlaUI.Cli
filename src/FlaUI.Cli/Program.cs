@@ -38,6 +38,13 @@ elemCommand.Add(KeysCommand.Create(sessionOption));
 elemCommand.Add(MenuCommand.Create(sessionOption));
 elemCommand.Add(ClearCommand.Create(sessionOption));
 elemCommand.Add(ScrollIntoViewCommand.Create(sessionOption));
+elemCommand.Add(ExpandCommand.Create(sessionOption));
+elemCommand.Add(CollapseCommand.Create(sessionOption));
+elemCommand.Add(GetRangeCommand.Create(sessionOption));
+elemCommand.Add(SetRangeCommand.Create(sessionOption));
+elemCommand.Add(GridInfoCommand.Create(sessionOption));
+elemCommand.Add(GetCellCommand.Create(sessionOption));
+elemCommand.Add(GetTextCommand.Create(sessionOption));
 rootCommand.Add(elemCommand);
 
 // Window commands
