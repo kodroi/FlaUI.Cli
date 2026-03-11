@@ -5,25 +5,21 @@ using FlaUI.Cli.Services;
 
 namespace FlaUI.Cli.Commands.Elem;
 
-public static class TypeCommand
+public static class ClearCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
         var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find' (e.g. \"f9d13611\")" };
         idOption.Required = true;
-        var textOption = new Option<string>("--text") { Description = "Text string to type into the element via keyboard simulation" };
-        textOption.Required = true;
         var windowOption = CommandHelper.CreateWindowOption();
 
-        var command = new Command("type", "Type text into an element");
+        var command = new Command("clear", "Clear the text content of an element");
         command.Add(idOption);
-        command.Add(textOption);
         command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
-            var text = parseResult.GetValue(textOption)!;
             var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
@@ -45,17 +41,17 @@ public static class TypeCommand
                     return;
                 }
 
-                engine.Type(element, text);
+                AutomationEngine.Clear(element);
 
-                CommandHelper.RecordStep(session, "elem type", elementId,
-                    new Dictionary<string, object?> { ["text"] = text }, true);
+                CommandHelper.RecordStep(session, "elem clear", elementId,
+                    new Dictionary<string, object?>(), true);
 
                 sessionManager.Save(sessionPath, session);
 
                 var entry = SessionManager.GetElement(session, elementId);
                 JsonOutput.Write(new ActionResult(
                     Success: true,
-                    Message: "Text typed.",
+                    Message: "Element cleared.",
                     ElementId: elementId,
                     SelectorQuality: entry?.SelectorQuality));
 

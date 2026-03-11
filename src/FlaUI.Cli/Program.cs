@@ -35,6 +35,7 @@ elemCommand.Add(GetValueCommand.Create(sessionOption));
 elemCommand.Add(GetStateCommand.Create(sessionOption));
 elemCommand.Add(KeysCommand.Create(sessionOption));
 elemCommand.Add(MenuCommand.Create(sessionOption));
+elemCommand.Add(ClearCommand.Create(sessionOption));
 elemCommand.Add(ScrollIntoViewCommand.Create(sessionOption));
 rootCommand.Add(elemCommand);
 

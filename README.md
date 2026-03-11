@@ -54,7 +54,7 @@ dotnet tool install --global FlaUI.Tool
 
 ```bash
 # Agent launches the app it just modified
-flaui session new --app "C:\Path\To\MyApp.exe" --selector-policy stable
+flaui session new --app "C:\Path\To\MyApp.exe"
 
 # Agent explores the UI to understand the layout
 flaui elem tree --depth 3
@@ -87,14 +87,15 @@ All commands accept a global `--session <path>` option to specify the session fi
 Launch an application and create a new session.
 
 ```bash
-flaui session new --app <path> [--args <args>] [--selector-policy <policy>]
+flaui session new --app <path> [--args <args>] [--wait-title <text>] [--wait-timeout <ms>]
 ```
 
 | Option | Required | Description |
 |--------|----------|-------------|
-| `--app` | Yes | Path to the application executable |
+| `--app` | Yes | Path to the application executable. Forward slashes are accepted and normalized automatically |
 | `--args` | No | Arguments to pass to the application |
-| `--selector-policy` | No | Minimum selector quality: `stable` (default), `acceptable`, `fragile` |
+| `--wait-title` | No | Wait until a window with a title containing this text appears before completing session creation |
+| `--wait-timeout` | No | Maximum time in milliseconds to wait for `--wait-title` (default: 30000) |
 
 ### `session attach`
 
@@ -118,7 +119,7 @@ Check if the session's process is still running and the window is valid.
 flaui session status
 ```
 
-Returns process alive state, window validity, element count, and recording status.
+Returns process alive state, window validity, element count, recording status, and the live main window title and handle. When the process and window are alive, the command reattaches to read the current window title (which may have changed since session creation).
 
 ### `session end`
 
@@ -190,9 +191,22 @@ flaui elem click --id <id> [--double] [--right]
 | `--double` | No | Double click |
 | `--right` | No | Right click |
 
+### `elem clear`
+
+Clear the text content of an element. Uses the Value pattern if supported, otherwise selects all text and deletes it via keyboard.
+
+```bash
+flaui elem clear --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
 ### `elem type`
 
-Type text into an element.
+Type text into an element. When used on a ComboBox, automatically redirects to select logic — expanding the dropdown and selecting the matching item by name.
 
 ```bash
 flaui elem type --id <id> --text <text>
@@ -201,7 +215,7 @@ flaui elem type --id <id> --text <text>
 | Option | Required | Description |
 |--------|----------|-------------|
 | `--id` | Yes | Element ID |
-| `--text` | Yes | Text to type |
+| `--text` | Yes | Text to type (or item name to select for ComboBoxes) |
 
 ### `elem set-value`
 
@@ -332,18 +346,22 @@ flaui window close [--handle <handle>] [--title <title>] [--force]
 
 ### `wait`
 
-Wait for an element condition to be met.
+Wait for an element condition or a window title to appear.
 
 ```bash
 flaui wait --aid <id> --timeout <ms> [--value <value>] [--state <state>]
+flaui wait --title <text> --timeout <ms>
 ```
 
 | Option | Required | Description |
 |--------|----------|-------------|
-| `--aid` | Yes | AutomationId of the element to wait for |
+| `--aid` | One of two | AutomationId of the element to wait for |
+| `--title` | One of two | Wait until a window title contains this text (case-insensitive, partial match) |
 | `--timeout` | Yes | Timeout in milliseconds |
-| `--value` | No | Wait until element has this value |
-| `--state` | No | Wait for state: `hidden`, `visible`, `enabled` |
+| `--value` | No | Wait until element has this value (use with `--aid`) |
+| `--state` | No | Wait for state: `hidden`, `visible`, `enabled` (use with `--aid`) |
+
+When using `--title`, the response includes `windowHandle` and `windowTitle` fields, and the session's main window is updated to match.
 
 ### `record start`
 
@@ -471,7 +489,7 @@ flaui batch --steps '<json>' [--continue-on-error]
 
 Use `$prev.field` to reference the previous step's result, or `$steps[N].field` to reference step N's result.
 
-Supported commands: `elem find`, `elem click`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `window list`, `window focus`, `window close`, `screenshot`.
+Supported commands: `elem find`, `elem click`, `elem clear`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `window list`, `window focus`, `window close`, `screenshot`.
 
 ---
 

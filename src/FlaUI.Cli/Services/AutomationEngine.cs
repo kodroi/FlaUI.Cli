@@ -155,8 +155,14 @@ public class AutomationEngine : IDisposable
         Thread.Sleep(100);
     }
 
-    public static void Type(AutomationElement element, string text)
+    public void Type(AutomationElement element, string text)
     {
+        if (element.Properties.ControlType.ValueOrDefault == ControlType.ComboBox)
+        {
+            Select(element, text);
+            return;
+        }
+
         EnsureInteractable(element);
         element.Focus();
         Thread.Sleep(50);
@@ -168,6 +174,26 @@ public class AutomationEngine : IDisposable
         else
         {
             element.AsTextBox().Text = text;
+        }
+
+        Thread.Sleep(100);
+    }
+
+    public static void Clear(AutomationElement element)
+    {
+        EnsureInteractable(element);
+
+        if (element.Patterns.Value.IsSupported)
+        {
+            element.Patterns.Value.Pattern.SetValue(string.Empty);
+        }
+        else
+        {
+            element.Focus();
+            Thread.Sleep(50);
+            Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_A);
+            Thread.Sleep(50);
+            Keyboard.TypeSimultaneously(VirtualKeyShort.DELETE);
         }
 
         Thread.Sleep(100);
@@ -196,11 +222,17 @@ public class AutomationEngine : IDisposable
         if (element.Patterns.ExpandCollapse.IsSupported)
         {
             element.Patterns.ExpandCollapse.Pattern.Expand();
-            Thread.Sleep(200);
         }
 
-        var itemElement = element.FindFirstDescendant(
-            _automation.ConditionFactory.ByName(item));
+        AutomationElement? itemElement = null;
+        var sw = Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < 2000)
+        {
+            Thread.Sleep(200);
+            itemElement = element.FindFirstDescendant(
+                _automation.ConditionFactory.ByName(item));
+            if (itemElement is not null) break;
+        }
 
         if (itemElement is null)
             throw new InvalidOperationException($"Item '{item}' not found in element.");
@@ -322,9 +354,19 @@ public class AutomationEngine : IDisposable
     {
         if (target is not null)
         {
-            EnsureInteractable(target);
-            target.Focus();
-            Thread.Sleep(50);
+            if (!target.Properties.HasKeyboardFocus.ValueOrDefault)
+            {
+                EnsureInteractable(target);
+                target.Focus();
+                Thread.Sleep(50);
+            }
+            else
+            {
+                // Already focused — just ensure the window is foreground without disturbing selection state
+                var parentWindow = GetParentWindow(target);
+                if (parentWindow is not null)
+                    EnsureWindowForeground(parentWindow);
+            }
         }
         else if (window is not null)
         {

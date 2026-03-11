@@ -112,6 +112,7 @@ public class BatchExecutor
         {
             "elem find" => DispatchFind(args, targetWindow),
             "elem click" => DispatchClick(args, targetWindow),
+            "elem clear" => DispatchClear(args, targetWindow),
             "elem type" => DispatchType(args, targetWindow),
             "elem select" => DispatchSelect(args, targetWindow),
             "elem set-value" => DispatchSetValue(args, targetWindow),
@@ -178,11 +179,21 @@ public class BatchExecutor
         return new ActionResult(true, "Clicked.", id, entry?.SelectorQuality);
     }
 
+    private ActionResult DispatchClear(Dictionary<string, string> args, AutomationElement window)
+    {
+        var id = args["id"];
+        var element = ResolveElement(window, id);
+        AutomationEngine.Clear(element);
+
+        var entry = SessionManager.GetElement(_session, id);
+        return new ActionResult(true, "Element cleared.", id, entry?.SelectorQuality);
+    }
+
     private ActionResult DispatchType(Dictionary<string, string> args, AutomationElement window)
     {
         var id = args["id"];
         var element = ResolveElement(window, id);
-        AutomationEngine.Type(element, args["text"]);
+        _engine.Type(element, args["text"]);
 
         var entry = SessionManager.GetElement(_session, id);
         return new ActionResult(true, "Text typed.", id, entry?.SelectorQuality);

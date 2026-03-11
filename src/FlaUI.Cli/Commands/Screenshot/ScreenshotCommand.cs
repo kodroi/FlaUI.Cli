@@ -51,6 +51,9 @@ public static class ScreenshotCommand
 
                 var target = ResolveTarget(engine, sessionManager, session, mainWindow, elementId, windowHandle);
 
+                AutomationEngine.EnsureInteractable(target);
+                Thread.Sleep(200);
+
                 var result = AutomationEngine.CaptureScreenshot(target, output);
                 JsonOutput.Write(result);
                 Environment.ExitCode = ExitCodes.Success;

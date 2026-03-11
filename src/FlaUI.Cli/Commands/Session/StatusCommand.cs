@@ -24,6 +24,27 @@ public static class StatusCommand
                 var processAlive = SessionManager.IsProcessAlive(session);
                 var windowValid = SessionManager.IsWindowValid(session);
 
+                string? mainWindowTitle = session.Application.MainWindowTitle;
+                string? mainWindowHandle = null;
+
+                if (processAlive && windowValid)
+                {
+                    try
+                    {
+                        using var engine = new AutomationEngine();
+                        var (_, mainWindow) = engine.ReattachFromSession(session);
+                        mainWindowTitle = mainWindow.Properties.Name.ValueOrDefault;
+                        mainWindowHandle = $"0x{mainWindow.Properties.NativeWindowHandle.ValueOrDefault.ToInt64():X}";
+
+                        session.Application.MainWindowTitle = mainWindowTitle;
+                        sessionManager.Save(sessionPath, session);
+                    }
+                    catch
+                    {
+                        // Fall back to stored values
+                    }
+                }
+
                 JsonOutput.Write(new SessionStatusResult(
                     Success: true,
                     Message: "Session status retrieved.",
@@ -31,7 +52,9 @@ public static class StatusCommand
                     ProcessAlive: processAlive,
                     WindowValid: windowValid,
                     ElementCount: session.Elements.Count,
-                    Recording: session.Recording?.Active ?? false));
+                    Recording: session.Recording?.Active ?? false,
+                    MainWindowTitle: mainWindowTitle,
+                    MainWindowHandle: mainWindowHandle));
 
                 Environment.ExitCode = ExitCodes.Success;
             }

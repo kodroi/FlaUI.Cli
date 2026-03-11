@@ -25,7 +25,9 @@ public record SessionStatusResult(
     bool ProcessAlive,
     bool WindowValid,
     int ElementCount,
-    bool Recording);
+    bool Recording,
+    string? MainWindowTitle = null,
+    string? MainWindowHandle = null);
 
 public record ElementFindResult(
     bool Success,
@@ -100,7 +102,9 @@ public record GetStateResult(
 public record WaitResult(
     bool Success,
     string? Message,
-    long Elapsed);
+    long Elapsed,
+    string? WindowHandle = null,
+    string? WindowTitle = null);
 
 public record AuditResult(
     bool Success,
