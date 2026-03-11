@@ -288,7 +288,6 @@ public class BatchExecutor
 
         var hwnd = window.Properties.NativeWindowHandle.ValueOrDefault;
         NativeInterop.BringToFront(hwnd);
-        window.Focus();
 
         return new WindowFocusResult(true, "Window focused.", args["handle"], window.Title);
     }

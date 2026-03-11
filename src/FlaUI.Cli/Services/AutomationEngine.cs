@@ -113,7 +113,6 @@ public class AutomationEngine : IDisposable
         if (handle == IntPtr.Zero) return;
 
         NativeInterop.BringToFront(handle);
-        window.Focus();
         Thread.Sleep(100);
 
         ScrollIntoView(element);
@@ -327,7 +326,6 @@ public class AutomationEngine : IDisposable
         if (handle == IntPtr.Zero) return;
 
         NativeInterop.BringToFront(handle);
-        window.Focus();
         Thread.Sleep(100);
     }
 

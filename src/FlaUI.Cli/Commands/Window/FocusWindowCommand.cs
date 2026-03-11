@@ -41,7 +41,6 @@ public static class FocusWindowCommand
 
                 var hwnd = window.Properties.NativeWindowHandle.ValueOrDefault;
                 NativeInterop.BringToFront(hwnd);
-                window.Focus();
 
                 JsonOutput.Write(new WindowFocusResult(
                     Success: true,

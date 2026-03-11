@@ -5,7 +5,6 @@ namespace FlaUI.Cli.Infrastructure;
 public static partial class NativeInterop
 {
     private const int SwRestore = 9;
-    private const int SwShow = 5;
 
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
@@ -36,20 +35,8 @@ public static partial class NativeInterop
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool IsIconic(IntPtr hWnd);
 
-    [LibraryImport("user32.dll")]
-    private static partial IntPtr GetForegroundWindow();
-
-    [LibraryImport("kernel32.dll")]
-    private static partial uint GetCurrentThreadId();
-
-    [LibraryImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool AttachThreadInput(uint idAttach, uint idAttachTo,
-        [MarshalAs(UnmanagedType.Bool)] bool fAttach);
-
-    [LibraryImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool BringWindowToTop(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
@@ -65,27 +52,9 @@ public static partial class NativeInterop
     {
         if (IsIconic(hWnd))
             ShowWindow(hWnd, SwRestore);
-        else
-            ShowWindow(hWnd, SwShow);
 
-        var foregroundHwnd = GetForegroundWindow();
-        var ourThread = GetCurrentThreadId();
-        GetWindowThreadProcessId(foregroundHwnd, out _);
-        var foregroundThread = GetWindowThreadProcessId(foregroundHwnd, out _);
-
-        if (ourThread != foregroundThread)
-        {
-            AttachThreadInput(ourThread, foregroundThread, true);
-            SetForegroundWindow(hWnd);
-            BringWindowToTop(hWnd);
-            AttachThreadInput(ourThread, foregroundThread, false);
-        }
-        else
-        {
-            SetForegroundWindow(hWnd);
-            BringWindowToTop(hWnd);
-        }
-
+        keybd_event(0, 0, 0, UIntPtr.Zero);
+        SetForegroundWindow(hWnd);
         Thread.Sleep(100);
     }
 
