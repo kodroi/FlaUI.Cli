@@ -15,7 +15,7 @@
     <PackageId>FlaUI.Tool</PackageId>
     <Authors>Iiro Rahkonen</Authors>
     <Description>AI-agent-friendly CLI for Windows UI Automation. Drive applications, find elements with quality-rated selectors, and record interactions — all via JSON output.</Description>
-    <PackageTags>flaui;ui-automation;testing;accessibility;wpf;winforms;cli;dotnet-tool</PackageTags>
+    <PackageTags>UIA;FlaUI;CLI;flaui;ui-automation;testing;accessibility;wpf;winforms;cli;dotnet-tool</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/kodroi/FlaUI.Cli</PackageProjectUrl>
