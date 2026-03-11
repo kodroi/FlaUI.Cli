@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace FlaUI.Cli.IntegrationTests.Tests;
 
 public class SessionNewWaitTitleTests
@@ -41,7 +43,11 @@ public class SessionNewWaitTitleTests
         var testAppPath = SolutionLocator.GetTestAppPath(solutionRoot);
         var cli = new CliRunner(cliPath);
 
-        // Use a very short timeout to avoid long waits
+        // Snapshot existing TestApp PIDs so we only kill the one we spawn
+        var existingPids = Process.GetProcessesByName("FlaUI.Cli.TestApp")
+            .Select(p => p.Id)
+            .ToHashSet();
+
         var result = await cli.RunAsync(
             $"session new --app \"{testAppPath}\" --wait-title \"NonExistentTitle\" --wait-timeout 2000");
 
@@ -51,14 +57,13 @@ public class SessionNewWaitTitleTests
         Assert.False(error.Success);
         Assert.Contains("Timeout", error.Message);
 
-        // The app was launched but session creation failed — kill it by process name
-        // (best-effort cleanup)
+        // Kill only the newly spawned TestApp process
         try
         {
-            var processes = System.Diagnostics.Process.GetProcessesByName("FlaUI.Cli.TestApp");
-            foreach (var p in processes)
+            foreach (var p in Process.GetProcessesByName("FlaUI.Cli.TestApp"))
             {
-                p.Kill();
+                if (!existingPids.Contains(p.Id))
+                    p.Kill();
                 p.Dispose();
             }
         }
