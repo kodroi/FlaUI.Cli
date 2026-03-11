@@ -232,6 +232,7 @@ dotnet_diagnostic.IDE0305.severity = suggestion # Use collection expression
 
 # None — not applicable
 dotnet_diagnostic.CA2007.severity = none      # Do not directly await a Task (irrelevant for console apps)
+dotnet_diagnostic.CS1591.severity = none      # Missing XML comment for publicly visible type or member
 
 # Test file overrides
 [test/**/*.cs]

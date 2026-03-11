@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
 using FlaUI.Core.AutomationElements;
-using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
 

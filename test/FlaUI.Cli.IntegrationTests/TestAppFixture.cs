@@ -1,4 +1,3 @@
-using FlaUI.Cli.IntegrationTests.Infrastructure;
 namespace FlaUI.Cli.IntegrationTests;
 
 public sealed class TestAppFixture : IAsyncLifetime
