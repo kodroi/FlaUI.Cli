@@ -151,12 +151,7 @@ public class AutomationEngine : IDisposable
             }
         }
 
-        if (doubleClick)
-            element.DoubleClick();
-        else if (rightClick)
-            element.RightClick();
-        else
-            element.Click();
+        FocusAndClick(element, doubleClick, rightClick);
         Thread.Sleep(100);
     }
 
@@ -216,7 +211,7 @@ public class AutomationEngine : IDisposable
         }
         else
         {
-            itemElement.Click();
+            FocusAndClick(itemElement);
         }
 
         if (element.Patterns.ExpandCollapse.IsSupported)
@@ -396,7 +391,7 @@ public class AutomationEngine : IDisposable
                 if (menuItem.Patterns.Invoke.IsSupported)
                     menuItem.Patterns.Invoke.Pattern.Invoke();
                 else
-                    menuItem.Click();
+                    FocusAndClick(menuItem);
 
                 lastItem = menuItem;
             }
@@ -405,7 +400,7 @@ public class AutomationEngine : IDisposable
                 if (menuItem.Patterns.ExpandCollapse.IsSupported)
                     menuItem.Patterns.ExpandCollapse.Pattern.Expand();
                 else
-                    menuItem.Click();
+                    FocusAndClick(menuItem);
 
                 Thread.Sleep(200);
                 currentScope = menuItem;
@@ -532,6 +527,24 @@ public class AutomationEngine : IDisposable
             .And(_automation.ConditionFactory.ByName(name));
 
         return scope.FindFirstDescendant(condition);
+    }
+
+    private static void FocusAndClick(AutomationElement element, bool doubleClick = false, bool rightClick = false)
+    {
+        var window = GetParentWindow(element);
+        if (window is not null)
+        {
+            var handle = window.Properties.NativeWindowHandle.ValueOrDefault;
+            if (handle != IntPtr.Zero)
+                NativeInterop.BringToFront(handle);
+        }
+
+        if (doubleClick)
+            element.DoubleClick();
+        else if (rightClick)
+            element.RightClick();
+        else
+            element.Click();
     }
 
     private static bool IsProcessAlive(int pid)
