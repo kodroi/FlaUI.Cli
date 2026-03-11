@@ -24,7 +24,8 @@ A stateless CLI built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI 
 5. Agent uses menus and keyboard:   flaui elem menu --path "File > Save As"
                                     flaui elem keys --keys "ctrl+s"
 6. Agent reads the result:          flaui elem get-value --id a1b2
-7. Agent exports the steps as test: flaui record export --out customer-form-test.json
+7. Agent captures visual proof:     flaui screenshot --output form-state.png
+8. Agent exports the steps as test: flaui record export --out customer-form-test.json
 ```
 
 ---
@@ -397,6 +398,34 @@ flaui audit [--window <id>] [--recording] [--out <path>]
 
 Returns total elements, AutomationId coverage, selector quality distribution, and a list of issues (interactive controls with weak selectors).
 
+### `screenshot`
+
+Capture a screenshot of a window or element and save it to a file.
+
+```bash
+flaui screenshot --output <path> [--id <id>] [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--output` | Yes | Output file path. Format inferred from extension (`.png`, `.bmp`, `.jpg`) |
+| `--id` | No | Element ID — captures that element's bounding rectangle |
+| `--window` | No | Window handle (hex) — captures that window instead of the main window |
+
+If neither `--id` nor `--window` is given, captures the main window from the session.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Screenshot saved.",
+  "outputPath": "C:/absolute/path/to/screenshot.png",
+  "width": 1024,
+  "height": 768
+}
+```
+
 ### `batch`
 
 Execute multiple commands in a single session (one process attach, shared element state).
@@ -427,7 +456,7 @@ flaui batch --steps '<json>' [--continue-on-error]
 
 Use `$prev.field` to reference the previous step's result, or `$steps[N].field` to reference step N's result.
 
-Supported commands: `elem find`, `elem click`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `window list`, `window focus`, `window close`.
+Supported commands: `elem find`, `elem click`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `window list`, `window focus`, `window close`, `screenshot`.
 
 ---
 

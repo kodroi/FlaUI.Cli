@@ -171,6 +171,13 @@ public record BatchStepResult(
     string? Message,
     object? Result);
 
+public record ScreenshotResult(
+    bool Success,
+    string? Message,
+    string? OutputPath,
+    int Width,
+    int Height);
+
 public record ErrorResult(
     bool Success,
     string? Message);

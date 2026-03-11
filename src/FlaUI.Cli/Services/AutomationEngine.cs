@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Capturing;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
@@ -330,6 +331,15 @@ public class AutomationEngine : IDisposable
         }
 
         return lastItem;
+    }
+
+    public static ScreenshotResult CaptureScreenshot(AutomationElement element, string outputPath)
+    {
+        using var image = Capture.Element(element);
+        var fullPath = Path.GetFullPath(outputPath);
+        image.ToFile(fullPath);
+        return new ScreenshotResult(true, "Screenshot saved.", fullPath,
+            image.Bitmap.Width, image.Bitmap.Height);
     }
 
     public void CloseApplication(bool force = false)

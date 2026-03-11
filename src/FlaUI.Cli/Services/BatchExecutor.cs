@@ -122,6 +122,7 @@ public class BatchExecutor
             "window list" => DispatchWindowList(),
             "window focus" => DispatchWindowFocus(args),
             "window close" => DispatchWindowClose(args),
+            "screenshot" => DispatchScreenshot(args, targetWindow),
             _ => throw new InvalidOperationException($"Unknown batch command: '{cmd}'")
         };
     }
@@ -305,6 +306,19 @@ public class BatchExecutor
         window.Close();
 
         return new WindowCloseResult(true, "Window closed.", closedHandle, closedTitle);
+    }
+
+    private ScreenshotResult DispatchScreenshot(Dictionary<string, string> args, AutomationElement window)
+    {
+        var output = args.GetValueOrDefault("output")
+            ?? throw new InvalidOperationException("'output' is required for screenshot command.");
+
+        AutomationElement target = window;
+        var id = args.GetValueOrDefault("id");
+        if (!string.IsNullOrEmpty(id))
+            target = ResolveElement(window, id);
+
+        return AutomationEngine.CaptureScreenshot(target, output);
     }
 
     private AutomationElement ResolveElement(AutomationElement window, string elementId)

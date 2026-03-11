@@ -4,6 +4,7 @@ using FlaUI.Cli.Commands.Batch;
 using FlaUI.Cli.Commands.Elem;
 using FlaUI.Cli.Commands.Record;
 using FlaUI.Cli.Commands.Session;
+using FlaUI.Cli.Commands.Screenshot;
 using FlaUI.Cli.Commands.Wait;
 using FlaUI.Cli.Commands.Window;
 using FlaUI.Cli.Infrastructure;
@@ -61,6 +62,9 @@ rootCommand.Add(AuditCommand.Create(sessionOption));
 
 // Batch command
 rootCommand.Add(BatchCommand.Create(sessionOption));
+
+// Screenshot command
+rootCommand.Add(ScreenshotCommand.Create(sessionOption));
 
 UpdateChecker.RunInBackground();
 
