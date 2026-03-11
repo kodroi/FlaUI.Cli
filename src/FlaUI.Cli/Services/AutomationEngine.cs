@@ -121,6 +121,36 @@ public class AutomationEngine : IDisposable
     public static void Click(AutomationElement element, bool doubleClick = false, bool rightClick = false)
     {
         EnsureInteractable(element);
+
+        // For single left-clicks, prefer UIA patterns over mouse simulation
+        // when the element supports ExpandCollapse or Toggle. This avoids the
+        // "show desktop" race condition where FlaUI's mouse-based Click()
+        // moves the cursor to cached screen coordinates but the terminal
+        // steals focus before the click lands.
+        // Note: we intentionally skip Invoke — WPF toolbar buttons report
+        // Invoke support but the pattern shows the tooltip rather than
+        // firing the button's click handler.
+        if (!doubleClick && !rightClick)
+        {
+            if (element.Patterns.ExpandCollapse.IsSupported)
+            {
+                var pattern = element.Patterns.ExpandCollapse.Pattern;
+                if (pattern.ExpandCollapseState.Value == FlaUI.Core.Definitions.ExpandCollapseState.Expanded)
+                    pattern.Collapse();
+                else
+                    pattern.Expand();
+                Thread.Sleep(100);
+                return;
+            }
+
+            if (element.Patterns.Toggle.IsSupported)
+            {
+                element.Patterns.Toggle.Pattern.Toggle();
+                Thread.Sleep(100);
+                return;
+            }
+        }
+
         if (doubleClick)
             element.DoubleClick();
         else if (rightClick)
