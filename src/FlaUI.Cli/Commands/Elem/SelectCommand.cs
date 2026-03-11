@@ -9,9 +9,9 @@ public static class SelectCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id", "Element ID");
+        var idOption = new Option<string>("--id") { Description = "Element ID" };
         idOption.Required = true;
-        var itemOption = new Option<string>("--item", "Item to select");
+        var itemOption = new Option<string>("--item") { Description = "Item to select" };
         itemOption.Required = true;
 
         var command = new Command("select", "Select an item in a combo box or list");

@@ -9,9 +9,10 @@ public static class TreeCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var rootOption = new Option<string?>("--root", "Element ID to use as root (default: main window)");
-        var depthOption = new Option<int>("--depth", "Maximum tree depth")
+        var rootOption = new Option<string?>("--root") { Description = "Element ID to use as root (default: main window)" };
+        var depthOption = new Option<int>("--depth")
         {
+            Description = "Maximum tree depth",
             DefaultValueFactory = _ => 3
         };
 

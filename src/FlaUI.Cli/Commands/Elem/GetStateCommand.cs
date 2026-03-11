@@ -9,7 +9,7 @@ public static class GetStateCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id", "Element ID");
+        var idOption = new Option<string>("--id") { Description = "Element ID" };
         idOption.Required = true;
 
         var command = new Command("get-state", "Get an element's state");

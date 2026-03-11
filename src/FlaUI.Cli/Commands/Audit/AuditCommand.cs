@@ -11,9 +11,9 @@ public static class AuditCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var windowOption = new Option<string?>("--window", "Window element ID to audit");
-        var recordingOption = new Option<bool>("--recording", "Audit recording steps instead of live elements");
-        var outOption = new Option<string?>("--out", "Output file path");
+        var windowOption = new Option<string?>("--window") { Description = "Window element ID to audit" };
+        var recordingOption = new Option<bool>("--recording") { Description = "Audit recording steps instead of live elements" };
+        var outOption = new Option<string?>("--out") { Description = "Output file path" };
 
         var command = new Command("audit", "Audit selector quality and missing AutomationIds");
         command.Add(windowOption);

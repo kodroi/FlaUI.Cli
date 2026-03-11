@@ -5,7 +5,7 @@ using FlaUI.Cli.Commands.Record;
 using FlaUI.Cli.Commands.Session;
 using FlaUI.Cli.Commands.Wait;
 
-var sessionOption = new Option<string?>("--session", "Path to session file");
+var sessionOption = new Option<string?>("--session") { Description = "Path to session file", Recursive = true };
 
 var rootCommand = new RootCommand("FlaUI CLI — automate Windows desktop apps from the terminal");
 rootCommand.Add(sessionOption);

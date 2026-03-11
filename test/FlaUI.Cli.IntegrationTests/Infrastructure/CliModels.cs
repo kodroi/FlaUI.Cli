@@ -1,0 +1,134 @@
+using System.Text.Json.Serialization;
+
+namespace FlaUI.Cli.IntegrationTests.Infrastructure;
+
+public record SessionNewResult(
+    bool Success,
+    string? Message,
+    string? SessionFile,
+    int Pid,
+    string? ProcessName,
+    string? MainWindowTitle,
+    string? SelectorPolicy);
+
+public record SessionAttachResult(
+    bool Success,
+    string? Message,
+    string? SessionFile,
+    int Pid,
+    string? ProcessName,
+    string? MainWindowTitle,
+    string? SelectorPolicy);
+
+public record SessionStatusResult(
+    bool Success,
+    string? Message,
+    int Pid,
+    bool ProcessAlive,
+    bool WindowValid,
+    int ElementCount,
+    bool Recording);
+
+public record ElementFindResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    string? AutomationId,
+    string? Name,
+    string? ControlType,
+    [property: JsonConverter(typeof(JsonStringEnumConverter))]
+    SelectorQuality? SelectorQuality,
+    string? SelectorStrategy,
+    BoundsInfo? Bounds);
+
+public record BoundsInfo(double X, double Y, double Width, double Height);
+
+public record ElementTreeResult(
+    bool Success,
+    string? Message,
+    TreeNode? Root);
+
+public class TreeNode
+{
+    public string? ElementId { get; set; }
+    public string? AutomationId { get; set; }
+    public string? Name { get; set; }
+    public string? ControlType { get; set; }
+    public string? ClassName { get; set; }
+    public List<TreeNode> Children { get; set; } = [];
+}
+
+public record ElementPropsResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    string? AutomationId,
+    string? Name,
+    string? ControlType,
+    string? ClassName,
+    BoundsInfo? Bounds,
+    bool IsEnabled,
+    bool IsOffscreen,
+    int[]? RuntimeId,
+    string? HelpText,
+    string? AcceleratorKey);
+
+public record ActionResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    [property: JsonConverter(typeof(JsonStringEnumConverter))]
+    SelectorQuality? SelectorQuality);
+
+public record GetValueResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    string? Value,
+    string? SavedAs);
+
+public record GetStateResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    bool IsEnabled,
+    bool IsOffscreen,
+    bool IsVisible,
+    bool HasFocus,
+    string? ToggleState,
+    string? ExpandState);
+
+public record WaitResult(
+    bool Success,
+    string? Message,
+    long Elapsed);
+
+public record AuditResult(
+    bool Success,
+    string? Message,
+    int TotalElements,
+    int WithAutomationId,
+    int WithoutAutomationId,
+    Dictionary<string, int>? SelectorDistribution,
+    List<AuditIssue>? Issues);
+
+public record AuditIssue(
+    string? Name,
+    string? ControlType,
+    string? ClassName,
+    [property: JsonConverter(typeof(JsonStringEnumConverter))]
+    SelectorQuality SelectorQuality,
+    string? Recommendation);
+
+public record ErrorResult(
+    bool Success,
+    string? Message);
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum SelectorQuality
+{
+    Stable,
+    Acceptable,
+    Fragile,
+    Unresolvable
+}

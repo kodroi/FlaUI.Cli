@@ -9,7 +9,7 @@ public static class ExportCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var outOption = new Option<string>("--out", "Output file path");
+        var outOption = new Option<string>("--out") { Description = "Output file path" };
         outOption.Required = true;
 
         var command = new Command("export", "Export recording steps to JSON");

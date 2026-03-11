@@ -9,9 +9,9 @@ public static class SetValueCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id", "Element ID");
+        var idOption = new Option<string>("--id") { Description = "Element ID" };
         idOption.Required = true;
-        var valueOption = new Option<string>("--value", "Value to set");
+        var valueOption = new Option<string>("--value") { Description = "Value to set" };
         valueOption.Required = true;
 
         var command = new Command("set-value", "Set an element's value via the Value pattern");

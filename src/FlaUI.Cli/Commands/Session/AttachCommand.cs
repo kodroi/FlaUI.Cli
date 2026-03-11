@@ -9,9 +9,9 @@ public static class AttachCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var pidOption = new Option<int?>("--pid", "Process ID to attach to");
-        var nameOption = new Option<string?>("--name", "Process name to attach to");
-        var titleOption = new Option<string?>("--title", "Window title to attach to");
+        var pidOption = new Option<int?>("--pid") { Description = "Process ID to attach to" };
+        var nameOption = new Option<string?>("--name") { Description = "Process name to attach to" };
+        var titleOption = new Option<string?>("--title") { Description = "Window title to attach to" };
 
         var command = new Command("attach", "Attach to a running application and create a session");
         command.Add(pidOption);

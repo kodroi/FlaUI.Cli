@@ -9,7 +9,7 @@ public static class StartCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var descOption = new Option<string?>("--description", "Recording description");
+        var descOption = new Option<string?>("--description") { Description = "Recording description" };
 
         var command = new Command("start", "Start recording interactions");
         command.Add(descOption);

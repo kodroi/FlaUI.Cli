@@ -9,7 +9,7 @@ public static class KeepCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var seqOption = new Option<int>("--seq", "Step sequence number to re-include");
+        var seqOption = new Option<int>("--seq") { Description = "Step sequence number to re-include" };
         seqOption.Required = true;
 
         var command = new Command("keep", "Re-include a previously dropped recording step");

@@ -10,11 +10,11 @@ public static class WaitCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var aidOption = new Option<string>("--aid", "AutomationId to wait for");
+        var aidOption = new Option<string>("--aid") { Description = "AutomationId to wait for" };
         aidOption.Required = true;
-        var valueOption = new Option<string?>("--value", "Wait until element has this value");
-        var stateOption = new Option<string?>("--state", "Wait for state: hidden, visible, enabled");
-        var timeoutOption = new Option<int>("--timeout", "Timeout in milliseconds");
+        var valueOption = new Option<string?>("--value") { Description = "Wait until element has this value" };
+        var stateOption = new Option<string?>("--state") { Description = "Wait for state: hidden, visible, enabled" };
+        var timeoutOption = new Option<int>("--timeout") { Description = "Timeout in milliseconds" };
         timeoutOption.Required = true;
 
         var command = new Command("wait", "Wait for an element condition");

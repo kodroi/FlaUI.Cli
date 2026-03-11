@@ -9,12 +9,13 @@ public static class FindCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var aidOption = new Option<string?>("--aid", "AutomationId to find");
-        var nameOption = new Option<string?>("--name", "Element name to find");
-        var typeOption = new Option<string?>("--type", "ControlType to find");
-        var classOption = new Option<string?>("--class", "ClassName to find");
-        var timeoutOption = new Option<int>("--timeout", "Search timeout in milliseconds")
+        var aidOption = new Option<string?>("--aid") { Description = "AutomationId to find" };
+        var nameOption = new Option<string?>("--name") { Description = "Element name to find" };
+        var typeOption = new Option<string?>("--type") { Description = "ControlType to find" };
+        var classOption = new Option<string?>("--class") { Description = "ClassName to find" };
+        var timeoutOption = new Option<int>("--timeout")
         {
+            Description = "Search timeout in milliseconds",
             DefaultValueFactory = _ => 10000
         };
 

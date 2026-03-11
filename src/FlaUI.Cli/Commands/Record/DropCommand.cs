@@ -9,9 +9,10 @@ public static class DropCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var seqOption = new Option<int?>("--seq", "Step sequence number to drop");
-        var lastOption = new Option<int?>("--last", "Drop last N steps")
+        var seqOption = new Option<int?>("--seq") { Description = "Step sequence number to drop" };
+        var lastOption = new Option<int?>("--last")
         {
+            Description = "Drop last N steps",
             DefaultValueFactory = _ => 1
         };
 

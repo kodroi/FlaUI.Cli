@@ -1,0 +1,81 @@
+<Window x:Class="FlaUI.Cli.TestApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Contact Form" Height="400" Width="400"
+        AutomationProperties.AutomationId="MainWindow">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                   AutomationProperties.AutomationId="FormTitle"
+                   Text="Contact Form"
+                   FontSize="18" FontWeight="Bold"
+                   Margin="0,0,0,15"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="First Name:" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="1" Grid.Column="1"
+                 AutomationProperties.AutomationId="FirstNameInput"
+                 x:Name="FirstNameInput"
+                 Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Last Name:" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="2" Grid.Column="1"
+                 AutomationProperties.AutomationId="LastNameInput"
+                 x:Name="LastNameInput"
+                 Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Email:" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="3" Grid.Column="1"
+                 AutomationProperties.AutomationId="EmailInput"
+                 x:Name="EmailInput"
+                 Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Country:" VerticalAlignment="Center"/>
+        <ComboBox Grid.Row="4" Grid.Column="1"
+                  AutomationProperties.AutomationId="CountryCombo"
+                  x:Name="CountryCombo"
+                  Margin="0,0,0,8">
+            <ComboBoxItem Content="Finland"/>
+            <ComboBoxItem Content="Sweden"/>
+            <ComboBoxItem Content="Norway"/>
+            <ComboBoxItem Content="Denmark"/>
+        </ComboBox>
+
+        <CheckBox Grid.Row="5" Grid.ColumnSpan="2"
+                  AutomationProperties.AutomationId="AgreeCheckbox"
+                  x:Name="AgreeCheckbox"
+                  Content="I agree to the terms"
+                  Margin="0,0,0,12"/>
+
+        <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
+            <Button AutomationProperties.AutomationId="SubmitButton"
+                    Content="Submit"
+                    Width="80" Margin="0,0,8,0"
+                    Click="SubmitButton_Click"/>
+            <Button AutomationProperties.AutomationId="ClearButton"
+                    Content="Clear"
+                    Width="80"
+                    Click="ClearButton_Click"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="7" Grid.ColumnSpan="2"
+                   AutomationProperties.AutomationId="StatusLabel"
+                   x:Name="StatusLabel"
+                   Text="Ready"
+                   FontWeight="SemiBold"/>
+    </Grid>
+</Window>

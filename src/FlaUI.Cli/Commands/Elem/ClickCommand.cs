@@ -9,10 +9,10 @@ public static class ClickCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id", "Element ID");
+        var idOption = new Option<string>("--id") { Description = "Element ID" };
         idOption.Required = true;
-        var doubleOption = new Option<bool>("--double", "Double click");
-        var rightOption = new Option<bool>("--right", "Right click");
+        var doubleOption = new Option<bool>("--double") { Description = "Double click" };
+        var rightOption = new Option<bool>("--right") { Description = "Right click" };
 
         var command = new Command("click", "Click an element");
         command.Add(idOption);
