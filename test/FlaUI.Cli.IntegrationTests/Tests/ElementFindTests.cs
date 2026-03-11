@@ -37,6 +37,32 @@ public class ElementFindTests
     }
 
     [Fact]
+    public async Task Find_ReturnsWindowHandle()
+    {
+        var result = await _fixture.Cli.RunAsync($"elem find --aid SubmitButton {_fixture.SessionArg}");
+
+        Assert.Equal(0, result.ExitCode);
+        var found = CliRunner.Deserialize<ElementFindResult>(result.Stdout);
+        Assert.NotNull(found);
+        Assert.True(found.Success);
+        Assert.NotNull(found.WindowHandle);
+        Assert.StartsWith("0x", found.WindowHandle);
+    }
+
+    [Fact]
+    public async Task Find_ByName_WorksWithoutPolicy()
+    {
+        var result = await _fixture.Cli.RunAsync($"elem find --name \"Submit\" {_fixture.SessionArg}");
+
+        Assert.Equal(0, result.ExitCode);
+        var found = CliRunner.Deserialize<ElementFindResult>(result.Stdout);
+        Assert.NotNull(found);
+        Assert.True(found.Success);
+        Assert.Equal(SelectorQuality.Acceptable, found.SelectorQuality);
+        Assert.NotNull(found.WindowHandle);
+    }
+
+    [Fact]
     public async Task Find_NonExistent_ReturnsFailure()
     {
         var result = await _fixture.Cli.RunAsync($"elem find --aid DoesNotExist --timeout 2000 {_fixture.SessionArg}");

@@ -19,7 +19,7 @@
             <MenuItem Header="Paste" AutomationProperties.AutomationId="EditPaste" Click="MenuItem_Click"/>
         </MenuItem>
         <MenuItem Header="Help" AutomationProperties.AutomationId="HelpMenu">
-            <MenuItem Header="About" AutomationProperties.AutomationId="HelpAbout" Click="MenuItem_Click"/>
+            <MenuItem Header="About" AutomationProperties.AutomationId="HelpAbout" Click="HelpAbout_Click"/>
         </MenuItem>
     </Menu>
 

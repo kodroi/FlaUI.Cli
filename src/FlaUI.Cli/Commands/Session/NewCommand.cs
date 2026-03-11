@@ -12,22 +12,15 @@ public static class NewCommand
         var appOption = new Option<string>("--app") { Description = "Full or relative path to the .exe to launch (e.g. \"C:\\Apps\\MyApp.exe\")" };
         appOption.Required = true;
         var argsOption = new Option<string?>("--args") { Description = "Command-line arguments forwarded to the application (e.g. \"--config prod.json\")" };
-        var policyOption = new Option<string>("--selector-policy")
-        {
-            Description = "Minimum selector quality allowed: 'stable' (AutomationId required), 'acceptable' (Name ok), or 'fragile' (ClassName ok)",
-            DefaultValueFactory = _ => "stable"
-        };
 
         var command = new Command("new", "Launch an application and create a new session");
         command.Add(appOption);
         command.Add(argsOption);
-        command.Add(policyOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var app = parseResult.GetValue(appOption)!;
             var args = parseResult.GetValue(argsOption);
-            var policy = parseResult.GetValue(policyOption)!;
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -48,7 +41,6 @@ public static class NewCommand
                 {
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    SelectorPolicy = policy.ToLowerInvariant(),
                     Application = new ApplicationInfo
                     {
                         Path = Path.GetFullPath(app),
@@ -68,8 +60,7 @@ public static class NewCommand
                     SessionFile: sessionPath,
                     Pid: application.ProcessId,
                     ProcessName: application.Name,
-                    MainWindowTitle: mainWindow.Properties.Name.ValueOrDefault,
-                    SelectorPolicy: policy.ToLowerInvariant()));
+                    MainWindowTitle: mainWindow.Properties.Name.ValueOrDefault));
 
                 Environment.ExitCode = ExitCodes.Success;
             }

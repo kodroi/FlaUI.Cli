@@ -41,6 +41,12 @@ public partial class MainWindow : Window
         }
     }
 
+    private void HelpAbout_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new AboutDialog { Owner = this };
+        dialog.Show();
+    }
+
     private void FileExit_Click(object sender, RoutedEventArgs e)
     {
         Close();

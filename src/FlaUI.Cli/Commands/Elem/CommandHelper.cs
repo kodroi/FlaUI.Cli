@@ -38,11 +38,25 @@ internal static class CommandHelper
         var entry = SessionManager.GetElement(session, elementId);
         if (entry is null) return null;
 
+        // Try main window first with short timeout
         var resolver = engine.CreateSelectorResolver();
         var result = resolver.Resolve(mainWindow, entry.AutomationId, entry.Name,
-            entry.ControlType, entry.ClassName, 5000);
+            entry.ControlType, entry.ClassName, 2000);
+        if (result is not null) return result.Element;
 
-        return result?.Element;
+        // Search all windows
+        var mainHandle = mainWindow.Properties.NativeWindowHandle.ValueOrDefault;
+        foreach (var window in engine.GetAllTopLevelWindows())
+        {
+            if (window.Properties.NativeWindowHandle.ValueOrDefault == mainHandle) continue;
+
+            resolver = engine.CreateSelectorResolver();
+            result = resolver.Resolve(window, entry.AutomationId, entry.Name,
+                entry.ControlType, entry.ClassName, 2000);
+            if (result is not null) return result.Element;
+        }
+
+        return null;
     }
 
     internal static void RecordStep(

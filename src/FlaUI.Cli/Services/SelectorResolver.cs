@@ -1,7 +1,6 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Conditions;
 using FlaUI.Core.Definitions;
-using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 
 namespace FlaUI.Cli.Services;
@@ -71,18 +70,6 @@ public class SelectorResolver
 
         // Priority 6: Unresolvable
         return null;
-    }
-
-    public static int CheckPolicy(SelectorQuality quality, string policy)
-    {
-        return policy.ToLowerInvariant() switch
-        {
-            "stable" when quality != SelectorQuality.Stable => ExitCodes.SelectorPolicyViolation,
-            "acceptable" when quality is not (SelectorQuality.Stable or SelectorQuality.Acceptable) =>
-                ExitCodes.SelectorPolicyViolation,
-            "fragile" when quality == SelectorQuality.Unresolvable => ExitCodes.Unresolvable,
-            _ => ExitCodes.Success
-        };
     }
 
     private static AutomationElement? FindWithTimeout(AutomationElement parent, ConditionBase condition, int timeoutMs)

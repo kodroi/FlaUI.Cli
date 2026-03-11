@@ -72,8 +72,7 @@ public static class AttachCommand
                     SessionFile: sessionPath,
                     Pid: application.ProcessId,
                     ProcessName: application.Name,
-                    MainWindowTitle: mainWindow.Properties.Name.ValueOrDefault,
-                    SelectorPolicy: session.SelectorPolicy));
+                    MainWindowTitle: mainWindow.Properties.Name.ValueOrDefault));
 
                 Environment.ExitCode = ExitCodes.Success;
             }

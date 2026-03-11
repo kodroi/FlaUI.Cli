@@ -161,7 +161,8 @@ public class BatchExecutor
             element.Properties.Name.ValueOrDefault,
             element.Properties.ControlType.ValueOrDefault.ToString(),
             result.Quality, result.Strategy,
-            new BoundsInfo(bounds.X, bounds.Y, bounds.Width, bounds.Height));
+            new BoundsInfo(bounds.X, bounds.Y, bounds.Width, bounds.Height),
+            WindowHandle: null);
     }
 
     private ActionResult DispatchClick(Dictionary<string, string> args, AutomationElement window)

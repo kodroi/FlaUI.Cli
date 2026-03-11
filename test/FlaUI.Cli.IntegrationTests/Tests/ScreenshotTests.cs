@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Text.Json;
 
 namespace FlaUI.Cli.IntegrationTests.Tests;
@@ -94,6 +95,115 @@ public class ScreenshotTests : IAsyncLifetime
         Assert.True(batch.Success);
         Assert.Equal(1, batch.Succeeded);
         Assert.True(File.Exists(output));
+    }
+
+    [Fact]
+    public async Task Screenshot_SameElement_PixelsMatch()
+    {
+        // Find the Submit button
+        var findResult = await _fixture.Cli.RunAsync(
+            $"elem find --aid SubmitButton {_fixture.SessionArg}");
+        Assert.Equal(0, findResult.ExitCode);
+        var found = CliRunner.Deserialize<ElementFindResult>(findResult.Stdout);
+        Assert.NotNull(found?.ElementId);
+
+        // Take two screenshots of the same element
+        var output1 = CreateTempPath("png");
+        var output2 = CreateTempPath("png");
+
+        var result1 = await _fixture.Cli.RunAsync(
+            $"screenshot --id {found.ElementId} --output \"{output1}\" {_fixture.SessionArg}");
+        Assert.Equal(0, result1.ExitCode);
+        var screenshot1 = CliRunner.Deserialize<ScreenshotResult>(result1.Stdout);
+
+        var result2 = await _fixture.Cli.RunAsync(
+            $"screenshot --id {found.ElementId} --output \"{output2}\" {_fixture.SessionArg}");
+        Assert.Equal(0, result2.ExitCode);
+        var screenshot2 = CliRunner.Deserialize<ScreenshotResult>(result2.Stdout);
+
+        Assert.NotNull(screenshot1);
+        Assert.NotNull(screenshot2);
+
+        // Dimensions must match
+        Assert.Equal(screenshot1.Width, screenshot2.Width);
+        Assert.Equal(screenshot1.Height, screenshot2.Height);
+
+        // Pixel-level comparison
+        using var bmp1 = new Bitmap(output1);
+        using var bmp2 = new Bitmap(output2);
+
+        Assert.Equal(bmp1.Width, bmp2.Width);
+        Assert.Equal(bmp1.Height, bmp2.Height);
+
+        var totalPixels = bmp1.Width * bmp1.Height;
+        var mismatchCount = 0;
+
+        for (var y = 0; y < bmp1.Height; y++)
+        {
+            for (var x = 0; x < bmp1.Width; x++)
+            {
+                var pixel1 = bmp1.GetPixel(x, y);
+                var pixel2 = bmp2.GetPixel(x, y);
+                if (pixel1 != pixel2)
+                    mismatchCount++;
+            }
+        }
+
+        var matchPercentage = (double)(totalPixels - mismatchCount) / totalPixels * 100;
+        Assert.True(matchPercentage >= 99.0,
+            $"Pixel match {matchPercentage:F1}% is below 99% threshold ({mismatchCount}/{totalPixels} pixels differ)");
+    }
+
+    [Fact]
+    public async Task Screenshot_DifferentElements_PixelsDiffer()
+    {
+        // Find two different elements
+        var findButton = await _fixture.Cli.RunAsync(
+            $"elem find --aid SubmitButton {_fixture.SessionArg}");
+        Assert.Equal(0, findButton.ExitCode);
+        var button = CliRunner.Deserialize<ElementFindResult>(findButton.Stdout);
+
+        var findInput = await _fixture.Cli.RunAsync(
+            $"elem find --aid FirstNameInput {_fixture.SessionArg}");
+        Assert.Equal(0, findInput.ExitCode);
+        var input = CliRunner.Deserialize<ElementFindResult>(findInput.Stdout);
+
+        Assert.NotNull(button?.ElementId);
+        Assert.NotNull(input?.ElementId);
+
+        var output1 = CreateTempPath("png");
+        var output2 = CreateTempPath("png");
+
+        await _fixture.Cli.RunAsync(
+            $"screenshot --id {button.ElementId} --output \"{output1}\" {_fixture.SessionArg}");
+        await _fixture.Cli.RunAsync(
+            $"screenshot --id {input.ElementId} --output \"{output2}\" {_fixture.SessionArg}");
+
+        Assert.True(File.Exists(output1));
+        Assert.True(File.Exists(output2));
+
+        using var bmp1 = new Bitmap(output1);
+        using var bmp2 = new Bitmap(output2);
+
+        // Different elements should have different dimensions or different pixels
+        var dimensionsDiffer = bmp1.Width != bmp2.Width || bmp1.Height != bmp2.Height;
+
+        if (!dimensionsDiffer)
+        {
+            // Same dimensions — check pixel content differs
+            var mismatchCount = 0;
+            for (var y = 0; y < bmp1.Height; y++)
+            {
+                for (var x = 0; x < bmp1.Width; x++)
+                {
+                    if (bmp1.GetPixel(x, y) != bmp2.GetPixel(x, y))
+                        mismatchCount++;
+                }
+            }
+
+            Assert.True(mismatchCount > 0,
+                "Screenshots of different elements should have different pixels");
+        }
     }
 
     private string CreateTempPath(string extension)

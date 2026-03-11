@@ -1,0 +1,39 @@
+<Window x:Class="FlaUI.Cli.TestApp.AboutDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About" Height="200" Width="300"
+        WindowStartupLocation="CenterOwner"
+        AutomationProperties.AutomationId="AboutDialog">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   AutomationProperties.AutomationId="AboutTitle"
+                   Text="FlaUI Test App"
+                   FontSize="16" FontWeight="Bold"
+                   Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="1"
+                   AutomationProperties.AutomationId="AboutVersion"
+                   Text="Version 1.0.0"
+                   Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="2"
+                   AutomationProperties.AutomationId="AboutDescription"
+                   Text="A test application for FlaUI.Cli integration tests."
+                   TextWrapping="Wrap"/>
+
+        <Button Grid.Row="3"
+                AutomationProperties.AutomationId="AboutCloseButton"
+                Content="Close"
+                Width="80"
+                HorizontalAlignment="Right"
+                Click="CloseButton_Click"/>
+    </Grid>
+</Window>

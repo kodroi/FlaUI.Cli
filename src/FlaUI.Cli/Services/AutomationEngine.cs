@@ -242,7 +242,27 @@ public class AutomationEngine : IDisposable
         if (_application is null)
             throw new InvalidOperationException("No application attached.");
 
-        return _application.GetAllTopLevelWindows(_automation);
+        var handles = NativeInterop.GetProcessWindowHandles(_application.ProcessId);
+        var seen = new HashSet<IntPtr>();
+        var windows = new List<Window>();
+
+        foreach (var handle in handles)
+        {
+            if (!seen.Add(handle)) continue;
+
+            try
+            {
+                var element = _automation.FromHandle(handle).AsWindow();
+                if (element is not null)
+                    windows.Add(element);
+            }
+            catch
+            {
+                // Handle may no longer be valid
+            }
+        }
+
+        return windows.ToArray();
     }
 
     public Window? GetWindowByHandle(long handle)
@@ -299,7 +319,7 @@ public class AutomationEngine : IDisposable
             // If not found in current scope, search all top-level windows (popup menus)
             if (menuItem is null && _application is not null)
             {
-                foreach (var topWindow in _application.GetAllTopLevelWindows(_automation))
+                foreach (var topWindow in GetAllTopLevelWindows())
                 {
                     menuItem = FindMenuItem(topWindow, segmentName);
                     if (menuItem is not null) break;

@@ -6,8 +6,7 @@ public record SessionNewResult(
     string? SessionFile,
     int Pid,
     string? ProcessName,
-    string? MainWindowTitle,
-    string? SelectorPolicy);
+    string? MainWindowTitle);
 
 public record SessionAttachResult(
     bool Success,
@@ -15,8 +14,7 @@ public record SessionAttachResult(
     string? SessionFile,
     int Pid,
     string? ProcessName,
-    string? MainWindowTitle,
-    string? SelectorPolicy);
+    string? MainWindowTitle);
 
 public record SessionStatusResult(
     bool Success,
@@ -40,7 +38,8 @@ public record ElementFindResult(
     string? ControlType,
     SelectorQuality? SelectorQuality,
     string? SelectorStrategy,
-    BoundsInfo? Bounds);
+    BoundsInfo? Bounds,
+    string? WindowHandle);
 
 public record BoundsInfo(double X, double Y, double Width, double Height);
 

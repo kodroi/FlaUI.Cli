@@ -1,4 +1,5 @@
 using System.CommandLine;
+using FlaUI.Core.AutomationElements;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -20,7 +21,6 @@ public static class FindCommand
         };
 
         var windowOption = CommandHelper.CreateWindowOption();
-        var policyOption = new Option<string?>("--policy") { Description = "Override the session's selector policy for this command only (stable, acceptable, or fragile)" };
 
         var command = new Command("find", "Find an element by properties");
         command.Add(aidOption);
@@ -29,7 +29,6 @@ public static class FindCommand
         command.Add(classOption);
         command.Add(timeoutOption);
         command.Add(windowOption);
-        command.Add(policyOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
@@ -39,7 +38,6 @@ public static class FindCommand
             var cls = parseResult.GetValue(classOption);
             var timeout = parseResult.GetValue(timeoutOption);
             var windowHandle = parseResult.GetValue(windowOption);
-            var policy = parseResult.GetValue(policyOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -50,57 +48,58 @@ public static class FindCommand
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
                 var (_, mainWindow) = engine.ReattachFromSession(session);
-                var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var resolver = engine.CreateSelectorResolver();
-                var result = resolver.Resolve(targetWindow, aid, name, type, cls, timeout);
-
-                if (result is null)
+                // If a specific window is targeted, search only that window
+                if (!string.IsNullOrEmpty(windowHandle))
                 {
+                    var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
+                    var resolver = engine.CreateSelectorResolver();
+                    var result = resolver.Resolve(targetWindow, aid, name, type, cls, timeout);
+                    if (result is not null)
+                    {
+                        WriteFoundResult(result, targetWindow, session, sessionPath, sessionManager);
+                        return;
+                    }
+
                     JsonOutput.Write(new ErrorResult(false, "Element not found."));
                     Environment.ExitCode = ExitCodes.Unresolvable;
                     return;
                 }
 
-                var effectivePolicy = policy ?? session.SelectorPolicy;
-                var policyCheck = SelectorResolver.CheckPolicy(result.Quality, effectivePolicy);
-                if (policyCheck != ExitCodes.Success)
+                // Multi-window search: try main window first, then all others
+                var allWindows = engine.GetAllTopLevelWindows();
+                var windowCount = Math.Max(allWindows.Length, 1);
+                var perWindowTimeout = Math.Max(timeout / windowCount, 2000);
+
+                // Fast path: main window first with short timeout
                 {
-                    JsonOutput.Write(new ErrorResult(false,
-                        $"Selector quality '{result.Quality}' violates policy '{effectivePolicy}'."));
-                    Environment.ExitCode = policyCheck;
-                    return;
+                    var resolver = engine.CreateSelectorResolver();
+                    var result = resolver.Resolve(mainWindow, aid, name, type, cls, perWindowTimeout);
+                    if (result is not null)
+                    {
+                        WriteFoundResult(result, mainWindow, session, sessionPath, sessionManager);
+                        return;
+                    }
                 }
 
-                var elementId = Guid.NewGuid().ToString("N")[..8];
-                var element = result.Element;
-                var bounds = element.BoundingRectangle;
-
-                SessionManager.AddElement(session, elementId, new ElementEntry
+                // Search remaining windows
+                var mainHandle = mainWindow.Properties.NativeWindowHandle.ValueOrDefault;
+                foreach (var window in allWindows)
                 {
-                    AutomationId = element.Properties.AutomationId.ValueOrDefault,
-                    Name = element.Properties.Name.ValueOrDefault,
-                    ControlType = element.Properties.ControlType.ValueOrDefault.ToString(),
-                    ClassName = element.Properties.ClassName.ValueOrDefault,
-                    RuntimeId = element.Properties.RuntimeId.ValueOrDefault,
-                    SelectorQuality = result.Quality,
-                    LastVerified = DateTime.UtcNow
-                });
+                    var winHandle = window.Properties.NativeWindowHandle.ValueOrDefault;
+                    if (winHandle == mainHandle) continue;
 
-                sessionManager.Save(sessionPath, session);
+                    var resolver = engine.CreateSelectorResolver();
+                    var result = resolver.Resolve(window, aid, name, type, cls, perWindowTimeout);
+                    if (result is not null)
+                    {
+                        WriteFoundResult(result, window, session, sessionPath, sessionManager);
+                        return;
+                    }
+                }
 
-                JsonOutput.Write(new ElementFindResult(
-                    Success: true,
-                    Message: "Element found.",
-                    ElementId: elementId,
-                    AutomationId: element.Properties.AutomationId.ValueOrDefault,
-                    Name: element.Properties.Name.ValueOrDefault,
-                    ControlType: element.Properties.ControlType.ValueOrDefault.ToString(),
-                    SelectorQuality: result.Quality,
-                    SelectorStrategy: result.Strategy,
-                    Bounds: new BoundsInfo(bounds.X, bounds.Y, bounds.Width, bounds.Height)));
-
-                Environment.ExitCode = ExitCodes.Success;
+                JsonOutput.Write(new ErrorResult(false, "Element not found."));
+                Environment.ExitCode = ExitCodes.Unresolvable;
             }
             catch (Exception ex)
             {
@@ -110,5 +109,45 @@ public static class FindCommand
         });
 
         return command;
+    }
+
+    private static void WriteFoundResult(
+        SelectorResult result,
+        AutomationElement window,
+        SessionFile session,
+        string sessionPath,
+        SessionManager sessionManager)
+    {
+        var elementId = Guid.NewGuid().ToString("N")[..8];
+        var element = result.Element;
+        var bounds = element.BoundingRectangle;
+        var winHandle = window.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
+
+        SessionManager.AddElement(session, elementId, new ElementEntry
+        {
+            AutomationId = element.Properties.AutomationId.ValueOrDefault,
+            Name = element.Properties.Name.ValueOrDefault,
+            ControlType = element.Properties.ControlType.ValueOrDefault.ToString(),
+            ClassName = element.Properties.ClassName.ValueOrDefault,
+            RuntimeId = element.Properties.RuntimeId.ValueOrDefault,
+            SelectorQuality = result.Quality,
+            LastVerified = DateTime.UtcNow
+        });
+
+        sessionManager.Save(sessionPath, session);
+
+        JsonOutput.Write(new ElementFindResult(
+            Success: true,
+            Message: "Element found.",
+            ElementId: elementId,
+            AutomationId: element.Properties.AutomationId.ValueOrDefault,
+            Name: element.Properties.Name.ValueOrDefault,
+            ControlType: element.Properties.ControlType.ValueOrDefault.ToString(),
+            SelectorQuality: result.Quality,
+            SelectorStrategy: result.Strategy,
+            Bounds: new BoundsInfo(bounds.X, bounds.Y, bounds.Width, bounds.Height),
+            WindowHandle: $"0x{winHandle:X}"));
+
+        Environment.ExitCode = ExitCodes.Success;
     }
 }
