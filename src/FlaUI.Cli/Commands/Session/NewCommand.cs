@@ -86,6 +86,7 @@ public static class NewCommand
             }
             catch (Exception ex)
             {
+                engine.CloseApplication(force: true);
                 JsonOutput.Write(new ErrorResult(false, ex.Message));
                 Environment.ExitCode = ExitCodes.Error;
             }
