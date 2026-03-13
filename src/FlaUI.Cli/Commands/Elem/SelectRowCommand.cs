@@ -5,21 +5,25 @@ using FlaUI.Cli.Services;
 
 namespace FlaUI.Cli.Commands.Elem;
 
-public static class ScrollIntoViewCommand
+public static class SelectRowCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id") { Description = "Element ID to scroll into view" };
+        var idOption = new Option<string>("--id") { Description = "Element ID" };
         idOption.Required = true;
+        var rowOption = new Option<int>("--row") { Description = "Row index (0-based)" };
+        rowOption.Required = true;
         var windowOption = CommandHelper.CreateWindowOption();
 
-        var command = new Command("scroll-into-view", "Scroll an element into view using the ScrollItem pattern");
+        var command = new Command("select-row", "Select a row in a DataGrid element by row index");
         command.Add(idOption);
+        command.Add(rowOption);
         command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
             var elementId = parseResult.GetValue(idOption)!;
+            var row = parseResult.GetValue(rowOption);
             var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
@@ -41,19 +45,13 @@ public static class ScrollIntoViewCommand
                     return;
                 }
 
-                var scrolled = AutomationEngine.ScrollIntoView(element);
+                var result = AutomationEngine.SelectRow(element, elementId, row);
 
-                CommandHelper.RecordStep(session, "elem scroll-into-view", elementId,
-                    null, true);
-
+                CommandHelper.RecordStep(session, "elem select-row", elementId,
+                    new Dictionary<string, object?> { ["row"] = row }, true);
                 sessionManager.Save(sessionPath, session);
 
-                JsonOutput.Write(new ScrollIntoViewResult(
-                    Success: true,
-                    Message: scrolled ? "Element scrolled into view." : "Element could not be scrolled into view.",
-                    ElementId: elementId,
-                    Scrolled: scrolled));
-
+                JsonOutput.Write(result);
                 Environment.ExitCode = ExitCodes.Success;
             }
             catch (Exception ex)

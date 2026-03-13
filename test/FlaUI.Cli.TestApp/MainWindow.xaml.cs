@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 
 namespace FlaUI.Cli.TestApp;
 
@@ -51,6 +52,7 @@ public partial class MainWindow : Window
         TestExpander.IsExpanded = false;
         VirtualizedCombo.SelectedIndex = -1;
         TestSlider.Value = 50;
+        TestGrid.SelectedIndex = -1;
         StatusLabel.Text = "Ready";
     }
 
@@ -71,6 +73,17 @@ public partial class MainWindow : Window
     private void FileExit_Click(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void TestGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TestGrid.SelectedItem is ContactRow row)
+            StatusLabel.Text = $"Selected: {row.Name} ({row.City})";
+    }
+
+    private void OffScreenButton_Click(object sender, RoutedEventArgs e)
+    {
+        StatusLabel.Text = "OffScreenButton clicked";
     }
 }
 

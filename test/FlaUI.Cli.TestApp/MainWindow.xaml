@@ -1,7 +1,7 @@
 <Window x:Class="FlaUI.Cli.TestApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Contact Form" Height="650" Width="400"
+        Title="Contact Form" Height="720" Width="400"
         AutomationProperties.AutomationId="MainWindow">
 
     <DockPanel>
@@ -26,6 +26,7 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -150,7 +151,8 @@
                   IsReadOnly="True"
                   AutoGenerateColumns="False"
                   Height="100" Margin="0,0,0,8"
-                  HeadersVisibility="Column">
+                  HeadersVisibility="Column"
+                  SelectionChanged="TestGrid_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
                 <DataGridTextColumn Header="Age" Binding="{Binding Age}" Width="60"/>
@@ -169,7 +171,25 @@
             </FlowDocument>
         </RichTextBox>
 
-        <TextBlock Grid.Row="13" Grid.ColumnSpan="2"
+        <TextBlock Grid.Row="13" Grid.Column="0" Text="Scroll:" VerticalAlignment="Top" Margin="0,8,0,0"/>
+        <ScrollViewer Grid.Row="13" Grid.Column="1"
+                      AutomationProperties.AutomationId="TestScrollViewer"
+                      VerticalScrollBarVisibility="Auto"
+                      Height="80" Margin="0,8,0,0">
+            <StackPanel>
+                <TextBlock Text="Top content" Margin="0,0,0,10"/>
+                <TextBlock Text="Filler line 2" Margin="0,0,0,10"/>
+                <TextBlock Text="Filler line 3" Margin="0,0,0,10"/>
+                <TextBlock Text="Filler line 4" Margin="0,0,0,10"/>
+                <TextBlock Text="Filler line 5" Margin="0,0,0,10"/>
+                <TextBlock Text="Filler line 6" Margin="0,0,0,10"/>
+                <Button AutomationProperties.AutomationId="OffScreenButton"
+                        Content="Off-Screen Button" Width="120" HorizontalAlignment="Left"
+                        Click="OffScreenButton_Click"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="14" Grid.ColumnSpan="2"
                    AutomationProperties.AutomationId="StatusLabel"
                    x:Name="StatusLabel"
                    Text="Ready"

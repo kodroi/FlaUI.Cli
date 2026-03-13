@@ -237,6 +237,12 @@ public record GetCellResult(
     int Column,
     string? Value);
 
+public record SelectRowResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    int Row);
+
 public record GetTextResult(
     bool Success,
     string? Message,
