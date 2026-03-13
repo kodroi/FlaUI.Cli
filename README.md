@@ -35,7 +35,6 @@ A stateless CLI built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI 
 - **Agents can verify their own UI changes** — the agent builds a feature, launches the app, and checks that buttons, fields, and workflows actually work
 - **Agents generate tests from real interactions** — every click, type, and navigation is recorded and exported as structured test steps; the agent turns them into test cases
 - **Selector quality keeps tests reliable** — every element is rated `Stable`, `Acceptable`, or `Fragile`; the agent knows which selectors will survive the next refactor
-- **Selector policies fail fast** — set a quality floor per session; fragile selectors return exit code `2` instead of silently producing a flaky test
 - **Stateless and JSON-native** — no persistent process, no shared memory; agents parse JSON natively, so there's zero glue code between the agent and the tool
 
 ---
@@ -141,7 +140,7 @@ flaui session end [--close-app] [--force]
 Find an element by one or more properties. Returns an element ID for use in subsequent commands.
 
 ```bash
-flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [--timeout <ms>] [--window <handle>] [--policy <policy>]
+flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [--timeout <ms>] [--window <handle>]
 ```
 
 | Option | Required | Description |
@@ -152,7 +151,6 @@ flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [
 | `--class` | No | ClassName to find |
 | `--timeout` | No | Search timeout in milliseconds (default: 10000) |
 | `--window` | No | Window handle (hex) to search in instead of the main window |
-| `--policy` | No | Override session selector policy for this command (`stable`, `acceptable`, `fragile`) |
 
 Response includes `selectorQuality` and `selectorStrategy` so the agent knows how reliable the selector is.
 
@@ -309,6 +307,32 @@ flaui elem scroll-into-view --id <id> [--window <handle>]
 | `--window` | No | Window handle (hex) to target |
 
 Returns `scrolled: true` if the element supported the ScrollItem pattern and was scrolled, or `scrolled: false` if the pattern is not supported. This is also called automatically by `elem click`, `elem type`, and other interaction commands.
+
+### `elem expand`
+
+Expand a collapsible element (Expander, TreeViewItem, ComboBox, etc.) via the ExpandCollapse pattern.
+
+```bash
+flaui elem expand --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+### `elem collapse`
+
+Collapse an expandable element (Expander, TreeViewItem, ComboBox, etc.) via the ExpandCollapse pattern.
+
+```bash
+flaui elem collapse --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
 
 ### `elem get-range`
 
@@ -713,6 +737,21 @@ If neither `--id` nor `--window` is given, captures the main window from the ses
 }
 ```
 
+### `report`
+
+Create a GitHub issue on the FlaUI.Cli repository via the `gh` CLI.
+
+```bash
+flaui report --title <title> --description <description>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--title` | Yes | Issue title |
+| `--description` | Yes | Issue body / description |
+
+Requires [GitHub CLI](https://cli.github.com) installed and authenticated (`gh auth login`).
+
 ### `batch`
 
 Execute multiple commands in a single session (one process attach, shared element state).
@@ -743,7 +782,7 @@ flaui batch --steps '<json>' [--continue-on-error]
 
 Use `$prev.field` to reference the previous step's result, or `$steps[N].field` to reference step N's result.
 
-Supported commands: `elem find`, `elem click`, `elem clear`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `elem get-range`, `elem set-range`, `elem grid-info`, `elem get-cell`, `elem get-text`, `elem get-scroll`, `elem scroll`, `elem get-dock`, `elem set-dock`, `elem grid-item-info`, `elem table-item-info`, `elem get-views`, `elem set-view`, `elem transform`, `window list`, `window focus`, `window close`, `window get-state`, `window minimize`, `window maximize`, `screenshot`.
+Supported commands: `elem find`, `elem click`, `elem clear`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem scroll-into-view`, `elem menu`, `window list`, `window focus`, `window close`, `screenshot`.
 
 ---
 
@@ -757,14 +796,6 @@ Every time `flaui` resolves an element, it evaluates the selector and assigns a 
 | **Acceptable** | Resolved by `Name` + `ControlType` composite | Use, but note the risk |
 | **Fragile** | Resolved by position, index, or volatile property | Flag for review or find a better selector |
 | **Unresolvable** | Element not found | Retry, adjust approach, or report failure |
-
-### Selector Policy
-
-```bash
-flaui session new --app "MyApp.exe" --selector-policy stable
-```
-
-With policy set to `stable`, any `elem find` that resolves below that threshold returns exit code `2` (policy violation). The agent knows immediately that the selector isn't reliable enough for production tests.
 
 ---
 
@@ -807,7 +838,7 @@ Every recorded step includes element selectors, quality ratings, timestamps, and
 |------|---------|
 | `0` | Success |
 | `1` | General error |
-| `2` | Selector policy violation — element found but selector quality below policy threshold |
+| `2` | GitHub CLI not installed (returned by `report` command) |
 | `3` | Element unresolvable — element not found within timeout |
 
 Agents use exit codes for control flow. A non-zero exit tells the agent exactly what went wrong without parsing error messages.
@@ -820,7 +851,7 @@ Agents use exit codes for control flow. A non-zero exit tells the agent exactly 
 
 `elem find` returns "not found" for elements inside collapsed Expanders. This is correct UIA behavior — collapsed containers don't expose their children to the automation tree.
 
-**Workaround:** First expand the Expander (find it, then `elem click` to expand), then search for child elements.
+**Workaround:** First expand the Expander with `elem expand`, then search for child elements. Use `elem collapse` when done.
 
 ### 2. `elem tree` returns no children for WPF ComboBox
 
