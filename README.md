@@ -87,7 +87,7 @@ All commands accept a global `--session <path>` option to specify the session fi
 Launch an application and create a new session.
 
 ```bash
-flaui session new --app <path> [--args <args>] [--wait-title <text>] [--wait-timeout <ms>]
+flaui session new --app <path> [--args <args>] [--wait-title <text>] [--wait-timeout <ms>] [--timeout <ms>]
 ```
 
 | Option | Required | Description |
@@ -96,13 +96,14 @@ flaui session new --app <path> [--args <args>] [--wait-title <text>] [--wait-tim
 | `--args` | No | Arguments to pass to the application |
 | `--wait-title` | No | Wait until a window with a title containing this text appears before completing session creation |
 | `--wait-timeout` | No | Maximum time in milliseconds to wait for `--wait-title` (default: 30000) |
+| `--timeout` | No | Maximum time in milliseconds to wait for the main window (default: 30000) |
 
 ### `session attach`
 
 Attach to an already running application.
 
 ```bash
-flaui session attach [--pid <pid>] [--name <name>] [--title <title>]
+flaui session attach [--pid <pid>] [--name <name>] [--title <title>] [--timeout <ms>]
 ```
 
 | Option | Required | Description |
@@ -110,6 +111,7 @@ flaui session attach [--pid <pid>] [--name <name>] [--title <title>]
 | `--pid` | One of three | Process ID to attach to |
 | `--name` | One of three | Process name to attach to |
 | `--title` | One of three | Window title to attach to |
+| `--timeout` | No | Maximum time in milliseconds to wait for the main window (default: 10000) |
 
 ### `session status`
 
@@ -382,6 +384,142 @@ flaui elem get-text --id <id> [--window <handle>]
 
 Returns the full text content of the element's document range.
 
+### `elem get-scroll`
+
+Get scroll position and scrollability of a container via the Scroll pattern.
+
+```bash
+flaui elem get-scroll --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns `horizontalPercent`, `verticalPercent`, `horizontalViewSize`, `verticalViewSize`, `horizontallyScrollable`, and `verticallyScrollable`.
+
+### `elem scroll`
+
+Scroll a container to a position via the Scroll pattern.
+
+```bash
+flaui elem scroll --id <id> [--horizontal <pct>] [--vertical <pct>] [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--horizontal` | No | Horizontal scroll percent (0-100), omit for no change |
+| `--vertical` | No | Vertical scroll percent (0-100), omit for no change |
+| `--window` | No | Window handle (hex) to target |
+
+### `elem get-dock`
+
+Get an element's dock position via the Dock pattern.
+
+```bash
+flaui elem get-dock --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+### `elem set-dock`
+
+Set an element's dock position via the Dock pattern.
+
+```bash
+flaui elem set-dock --id <id> --position <pos> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--position` | Yes | Dock position: `top`, `bottom`, `left`, `right`, `fill`, `none` |
+| `--window` | No | Window handle (hex) to target |
+
+### `elem grid-item-info`
+
+Get row, column, and span info for a cell via the GridItem pattern.
+
+```bash
+flaui elem grid-item-info --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns `row`, `column`, `rowSpan`, and `columnSpan`.
+
+### `elem table-item-info`
+
+Get row and column header info for a cell via the TableItem pattern.
+
+```bash
+flaui elem table-item-info --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns `rowHeaders` and `columnHeaders` arrays.
+
+### `elem get-views`
+
+Get supported views and current view via the MultipleView pattern.
+
+```bash
+flaui elem get-views --id <id> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--window` | No | Window handle (hex) to target |
+
+Returns `currentViewId`, `currentViewName`, `supportedViewIds`, and `supportedViewNames`.
+
+### `elem set-view`
+
+Set the current view via the MultipleView pattern.
+
+```bash
+flaui elem set-view --id <id> --view <viewId> [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--view` | Yes | View ID to set (from `get-views`) |
+| `--window` | No | Window handle (hex) to target |
+
+### `elem transform`
+
+Move, resize, or rotate an element via the Transform pattern.
+
+```bash
+flaui elem transform --id <id> [--x <x>] [--y <y>] [--width <w>] [--height <h>] [--rotate <deg>] [--window <handle>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--id` | Yes | Element ID |
+| `--x` | No | X coordinate to move to |
+| `--y` | No | Y coordinate to move to |
+| `--width` | No | Width to resize to |
+| `--height` | No | Height to resize to |
+| `--rotate` | No | Degrees to rotate |
+| `--window` | No | Window handle (hex) to target |
+
+At least one transform option must be specified. Returns `canMove`, `canResize`, and `canRotate` capabilities.
+
 ### `window list`
 
 List all top-level windows for the attached application.
@@ -417,6 +555,48 @@ flaui window close [--handle <handle>] [--title <title>] [--force]
 | `--handle` | One of two | Window handle as hex string |
 | `--title` | One of two | Window title (partial, case-insensitive) |
 | `--force` | No | Force-kill the window's process if graceful close fails |
+
+### `window get-state`
+
+Get window state (visual state, modal, topmost) via the Window pattern.
+
+```bash
+flaui window get-state --handle <handle>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--handle` | Yes | Window handle as hex string (from `window list`) |
+
+Returns `visualState` (`Normal`, `Minimized`, `Maximized`), `canMaximize`, `canMinimize`, `isModal`, and `isTopmost`.
+
+### `window minimize`
+
+Minimize a window via the Window pattern.
+
+```bash
+flaui window minimize --handle <handle>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--handle` | Yes | Window handle as hex string (from `window list`) |
+
+Returns the new window state after minimizing.
+
+### `window maximize`
+
+Maximize a window via the Window pattern.
+
+```bash
+flaui window maximize --handle <handle>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--handle` | Yes | Window handle as hex string (from `window list`) |
+
+Returns the new window state after maximizing.
 
 ### `wait`
 
@@ -563,7 +743,7 @@ flaui batch --steps '<json>' [--continue-on-error]
 
 Use `$prev.field` to reference the previous step's result, or `$steps[N].field` to reference step N's result.
 
-Supported commands: `elem find`, `elem click`, `elem clear`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `elem get-range`, `elem set-range`, `elem grid-info`, `elem get-cell`, `elem get-text`, `window list`, `window focus`, `window close`, `screenshot`.
+Supported commands: `elem find`, `elem click`, `elem clear`, `elem type`, `elem select`, `elem set-value`, `elem get-value`, `elem get-state`, `elem keys`, `elem menu`, `elem scroll-into-view`, `elem get-range`, `elem set-range`, `elem grid-info`, `elem get-cell`, `elem get-text`, `elem get-scroll`, `elem scroll`, `elem get-dock`, `elem set-dock`, `elem grid-item-info`, `elem table-item-info`, `elem get-views`, `elem set-view`, `elem transform`, `window list`, `window focus`, `window close`, `window get-state`, `window minimize`, `window maximize`, `screenshot`.
 
 ---
 

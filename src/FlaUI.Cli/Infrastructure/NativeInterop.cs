@@ -33,7 +33,7 @@ public static partial class NativeInterop
 
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool IsIconic(IntPtr hWnd);
+    public static partial bool IsIconic(IntPtr hWnd);
 
     [DllImport("user32.dll")]
     private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);

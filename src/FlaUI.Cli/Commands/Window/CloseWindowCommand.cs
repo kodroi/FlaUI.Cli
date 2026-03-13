@@ -67,7 +67,10 @@ public static class CloseWindowCommand
                 var closedHandle = $"{hwnd.ToInt64():X}";
                 var closedTitle = window.Title;
 
-                NativeInterop.CloseWindow(hwnd);
+                if (window.Patterns.Window.IsSupported)
+                    window.Patterns.Window.Pattern.Close();
+                else
+                    NativeInterop.CloseWindow(hwnd);
 
                 if (force)
                 {

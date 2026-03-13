@@ -243,6 +243,67 @@ public record GetTextResult(
     string? ElementId,
     string? Text);
 
+public record ScrollInfoResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    double HorizontalPercent,
+    double VerticalPercent,
+    double HorizontalViewSize,
+    double VerticalViewSize,
+    bool HorizontallyScrollable,
+    bool VerticallyScrollable);
+
+public record DockPositionResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    string? DockPosition);
+
+public record GridItemInfoResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    int Row,
+    int Column,
+    int RowSpan,
+    int ColumnSpan);
+
+public record TableItemInfoResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    string[]? RowHeaders,
+    string[]? ColumnHeaders);
+
+public record MultipleViewInfoResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    int CurrentViewId,
+    string? CurrentViewName,
+    int[]? SupportedViewIds,
+    string[]? SupportedViewNames);
+
+public record TransformResult(
+    bool Success,
+    string? Message,
+    string? ElementId,
+    bool CanMove,
+    bool CanResize,
+    bool CanRotate);
+
+public record WindowStateResult(
+    bool Success,
+    string? Message,
+    string? Handle,
+    string? Title,
+    string? VisualState,
+    bool CanMaximize,
+    bool CanMinimize,
+    bool IsModal,
+    bool IsTopmost);
+
 public record ErrorResult(
     bool Success,
     string? Message);

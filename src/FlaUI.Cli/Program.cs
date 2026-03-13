@@ -45,6 +45,15 @@ elemCommand.Add(SetRangeCommand.Create(sessionOption));
 elemCommand.Add(GridInfoCommand.Create(sessionOption));
 elemCommand.Add(GetCellCommand.Create(sessionOption));
 elemCommand.Add(GetTextCommand.Create(sessionOption));
+elemCommand.Add(GetScrollCommand.Create(sessionOption));
+elemCommand.Add(ScrollCommand.Create(sessionOption));
+elemCommand.Add(GetDockCommand.Create(sessionOption));
+elemCommand.Add(SetDockCommand.Create(sessionOption));
+elemCommand.Add(GridItemInfoCommand.Create(sessionOption));
+elemCommand.Add(TableItemInfoCommand.Create(sessionOption));
+elemCommand.Add(GetViewsCommand.Create(sessionOption));
+elemCommand.Add(SetViewCommand.Create(sessionOption));
+elemCommand.Add(TransformCommand.Create(sessionOption));
 rootCommand.Add(elemCommand);
 
 // Window commands
@@ -52,6 +61,9 @@ var windowCommand = new Command("window", "Manage application windows");
 windowCommand.Add(ListWindowsCommand.Create(sessionOption));
 windowCommand.Add(FocusWindowCommand.Create(sessionOption));
 windowCommand.Add(CloseWindowCommand.Create(sessionOption));
+windowCommand.Add(GetWindowStateCommand.Create(sessionOption));
+windowCommand.Add(MinimizeWindowCommand.Create(sessionOption));
+windowCommand.Add(MaximizeWindowCommand.Create(sessionOption));
 rootCommand.Add(windowCommand);
 
 // Wait command

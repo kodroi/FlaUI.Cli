@@ -19,12 +19,18 @@ public static class NewCommand
             Description = "Maximum time in milliseconds to wait for --wait-title (default: 30000)",
             DefaultValueFactory = _ => 30000
         };
+        var timeoutOption = new Option<int>("--timeout")
+        {
+            Description = "Maximum time in milliseconds to wait for the main window (default: 30000)",
+            DefaultValueFactory = _ => 30000
+        };
 
         var command = new Command("new", "Launch an application and create a new session");
         command.Add(appOption);
         command.Add(argsOption);
         command.Add(waitTitleOption);
         command.Add(waitTimeoutOption);
+        command.Add(timeoutOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
@@ -32,6 +38,7 @@ public static class NewCommand
             var args = parseResult.GetValue(argsOption);
             var waitTitle = parseResult.GetValue(waitTitleOption);
             var waitTimeout = parseResult.GetValue(waitTimeoutOption);
+            var timeout = parseResult.GetValue(timeoutOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
             using var engine = new AutomationEngine();
@@ -54,7 +61,7 @@ public static class NewCommand
                 }
                 else
                 {
-                    mainWindow = engine.GetMainWindow(TimeSpan.FromSeconds(30));
+                    mainWindow = engine.GetMainWindow(TimeSpan.FromMilliseconds(timeout));
                 }
 
                 var session = new SessionFile

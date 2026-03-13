@@ -146,10 +146,13 @@ public class AutomationEngine : IDisposable
                 return;
             }
 
-            // Use Invoke for buttons — more reliable than mouse simulation.
+            // Use Invoke for clickable controls — more reliable than mouse simulation.
             // Skip toolbar buttons which may show tooltips instead of firing.
             if (element.Patterns.Invoke.IsSupported
-                && element.ControlType == ControlType.Button)
+                && element.ControlType is ControlType.Button
+                    or ControlType.Hyperlink
+                    or ControlType.SplitButton
+                    or ControlType.MenuItem)
             {
                 element.Patterns.Invoke.Pattern.Invoke();
                 Thread.Sleep(100);
@@ -418,6 +421,189 @@ public class AutomationEngine : IDisposable
             Text: text);
     }
 
+    public static ScrollInfoResult GetScrollInfo(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.Scroll.IsSupported)
+            throw new InvalidOperationException("Element does not support the Scroll pattern.");
+
+        var pattern = element.Patterns.Scroll.Pattern;
+        return new ScrollInfoResult(
+            Success: true,
+            Message: "Scroll info retrieved.",
+            ElementId: elementId,
+            HorizontalPercent: pattern.HorizontalScrollPercent.Value,
+            VerticalPercent: pattern.VerticalScrollPercent.Value,
+            HorizontalViewSize: pattern.HorizontalViewSize.Value,
+            VerticalViewSize: pattern.VerticalViewSize.Value,
+            HorizontallyScrollable: pattern.HorizontallyScrollable.Value,
+            VerticallyScrollable: pattern.VerticallyScrollable.Value);
+    }
+
+    public static void SetScroll(AutomationElement element, double? horizontal, double? vertical)
+    {
+        if (!element.Patterns.Scroll.IsSupported)
+            throw new InvalidOperationException("Element does not support the Scroll pattern.");
+
+        var pattern = element.Patterns.Scroll.Pattern;
+        var h = horizontal ?? -1.0; // -1 = NoScroll (no change)
+        var v = vertical ?? -1.0;
+        pattern.SetScrollPercent(h, v);
+        Thread.Sleep(100);
+    }
+
+    public static DockPositionResult GetDockPosition(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.Dock.IsSupported)
+            throw new InvalidOperationException("Element does not support the Dock pattern.");
+
+        var pattern = element.Patterns.Dock.Pattern;
+        return new DockPositionResult(
+            Success: true,
+            Message: "Dock position retrieved.",
+            ElementId: elementId,
+            DockPosition: pattern.DockPosition.Value.ToString());
+    }
+
+    public static void SetDockPosition(AutomationElement element, DockPosition position)
+    {
+        if (!element.Patterns.Dock.IsSupported)
+            throw new InvalidOperationException("Element does not support the Dock pattern.");
+
+        element.Patterns.Dock.Pattern.SetDockPosition(position);
+        Thread.Sleep(100);
+    }
+
+    public static GridItemInfoResult GetGridItemInfo(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.GridItem.IsSupported)
+            throw new InvalidOperationException("Element does not support the GridItem pattern.");
+
+        var pattern = element.Patterns.GridItem.Pattern;
+        return new GridItemInfoResult(
+            Success: true,
+            Message: "Grid item info retrieved.",
+            ElementId: elementId,
+            Row: pattern.Row.Value,
+            Column: pattern.Column.Value,
+            RowSpan: pattern.RowSpan.Value,
+            ColumnSpan: pattern.ColumnSpan.Value);
+    }
+
+    public static TableItemInfoResult GetTableItemInfo(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.TableItem.IsSupported)
+            throw new InvalidOperationException("Element does not support the TableItem pattern.");
+
+        var pattern = element.Patterns.TableItem.Pattern;
+        var rowHeaders = pattern.RowHeaderItems.Value?.Select(h => h.Name).ToArray();
+        var colHeaders = pattern.ColumnHeaderItems.Value?.Select(h => h.Name).ToArray();
+
+        return new TableItemInfoResult(
+            Success: true,
+            Message: "Table item info retrieved.",
+            ElementId: elementId,
+            RowHeaders: rowHeaders,
+            ColumnHeaders: colHeaders);
+    }
+
+    public static MultipleViewInfoResult GetMultipleViewInfo(AutomationElement element, string elementId)
+    {
+        if (!element.Patterns.MultipleView.IsSupported)
+            throw new InvalidOperationException("Element does not support the MultipleView pattern.");
+
+        var pattern = element.Patterns.MultipleView.Pattern;
+        var currentViewId = pattern.CurrentView.Value;
+        var supportedViewIds = pattern.SupportedViews.Value;
+        var supportedViewNames = supportedViewIds?.Select(id => pattern.GetViewName(id)).ToArray();
+
+        return new MultipleViewInfoResult(
+            Success: true,
+            Message: "View info retrieved.",
+            ElementId: elementId,
+            CurrentViewId: currentViewId,
+            CurrentViewName: pattern.GetViewName(currentViewId),
+            SupportedViewIds: supportedViewIds,
+            SupportedViewNames: supportedViewNames);
+    }
+
+    public static void SetMultipleView(AutomationElement element, int viewId)
+    {
+        if (!element.Patterns.MultipleView.IsSupported)
+            throw new InvalidOperationException("Element does not support the MultipleView pattern.");
+
+        element.Patterns.MultipleView.Pattern.SetCurrentView(viewId);
+        Thread.Sleep(100);
+    }
+
+    public static TransformResult TransformElement(AutomationElement element, string elementId,
+        double? x, double? y, double? width, double? height, double? degrees)
+    {
+        if (!element.Patterns.Transform.IsSupported)
+            throw new InvalidOperationException("Element does not support the Transform pattern.");
+
+        var pattern = element.Patterns.Transform.Pattern;
+
+        if (x.HasValue || y.HasValue)
+        {
+            if (!pattern.CanMove.Value)
+                throw new InvalidOperationException("Element does not support moving.");
+            pattern.Move(x ?? 0, y ?? 0);
+        }
+
+        if (width.HasValue || height.HasValue)
+        {
+            if (!pattern.CanResize.Value)
+                throw new InvalidOperationException("Element does not support resizing.");
+            pattern.Resize(width ?? 0, height ?? 0);
+        }
+
+        if (degrees.HasValue)
+        {
+            if (!pattern.CanRotate.Value)
+                throw new InvalidOperationException("Element does not support rotation.");
+            pattern.Rotate(degrees.Value);
+        }
+
+        Thread.Sleep(100);
+
+        return new TransformResult(
+            Success: true,
+            Message: "Transform applied.",
+            ElementId: elementId,
+            CanMove: pattern.CanMove.Value,
+            CanResize: pattern.CanResize.Value,
+            CanRotate: pattern.CanRotate.Value);
+    }
+
+    public static WindowStateResult GetWindowState(AutomationElement window)
+    {
+        if (!window.Patterns.Window.IsSupported)
+            throw new InvalidOperationException("Element does not support the Window pattern.");
+
+        var pattern = window.Patterns.Window.Pattern;
+        var handle = window.Properties.NativeWindowHandle.ValueOrDefault;
+
+        return new WindowStateResult(
+            Success: true,
+            Message: "Window state retrieved.",
+            Handle: $"{handle.ToInt64():X}",
+            Title: window.Properties.Name.ValueOrDefault,
+            VisualState: pattern.WindowVisualState.Value.ToString(),
+            CanMaximize: pattern.CanMaximize.Value,
+            CanMinimize: pattern.CanMinimize.Value,
+            IsModal: pattern.IsModal.Value,
+            IsTopmost: pattern.IsTopmost.Value);
+    }
+
+    public static void SetWindowVisualState(AutomationElement window, WindowVisualState state)
+    {
+        if (!window.Patterns.Window.IsSupported)
+            throw new InvalidOperationException("Element does not support the Window pattern.");
+
+        window.Patterns.Window.Pattern.SetWindowVisualState(state);
+        Thread.Sleep(200);
+    }
+
     public static TreeNode BuildTree(AutomationElement element, int maxDepth, SessionFile session)
     {
         return BuildTreeRecursive(element, 0, maxDepth, session);
@@ -530,6 +716,10 @@ public class AutomationEngine : IDisposable
     {
         var handle = window.Properties.NativeWindowHandle.ValueOrDefault;
         if (handle == IntPtr.Zero) return;
+
+        // Prefer UIA Window pattern for restoring minimized windows
+        if (NativeInterop.IsIconic(handle) && window.Patterns.Window.IsSupported)
+            window.Patterns.Window.Pattern.SetWindowVisualState(WindowVisualState.Normal);
 
         NativeInterop.BringToFront(handle);
         Thread.Sleep(100);
