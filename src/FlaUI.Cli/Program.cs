@@ -44,6 +44,7 @@ elemCommand.Add(GetRangeCommand.Create(sessionOption));
 elemCommand.Add(SetRangeCommand.Create(sessionOption));
 elemCommand.Add(GridInfoCommand.Create(sessionOption));
 elemCommand.Add(GetCellCommand.Create(sessionOption));
+elemCommand.Add(SelectRowCommand.Create(sessionOption));
 elemCommand.Add(GetTextCommand.Create(sessionOption));
 elemCommand.Add(GetScrollCommand.Create(sessionOption));
 elemCommand.Add(ScrollCommand.Create(sessionOption));

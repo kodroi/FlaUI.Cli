@@ -406,6 +406,37 @@ public class AutomationEngine : IDisposable
             Value: cellValue);
     }
 
+    public static SelectRowResult SelectRow(AutomationElement element, string elementId, int row)
+    {
+        if (!element.Patterns.Grid.IsSupported)
+            throw new InvalidOperationException("Element does not support the Grid pattern.");
+
+        var grid = element.Patterns.Grid.Pattern;
+        var rowCount = grid.RowCount.Value;
+
+        if (row < 0 || row >= rowCount)
+            throw new InvalidOperationException($"Row index {row} is out of range [0, {rowCount - 1}].");
+
+        var cell = grid.GetItem(row, 0);
+        if (cell is null)
+            throw new InvalidOperationException($"Cell at row {row}, column 0 not found.");
+
+        // Walk up to find the DataItem (row element) for selection
+        var target = FindAncestorByControlType(cell, ControlType.DataItem) ?? cell;
+
+        if (!target.Patterns.SelectionItem.IsSupported)
+            throw new InvalidOperationException("Row element does not support the SelectionItem pattern.");
+
+        target.Patterns.SelectionItem.Pattern.Select();
+        Thread.Sleep(100);
+
+        return new SelectRowResult(
+            Success: true,
+            Message: "Row selected.",
+            ElementId: elementId,
+            Row: row);
+    }
+
     public static GetTextResult GetText(AutomationElement element, string elementId)
     {
         if (!element.Patterns.Text.IsSupported)
@@ -704,12 +735,14 @@ public class AutomationEngine : IDisposable
 
     public static bool ScrollIntoView(AutomationElement element)
     {
-        if (!element.Patterns.ScrollItem.IsSupported)
-            return false;
+        if (element.Patterns.ScrollItem.IsSupported)
+        {
+            element.Patterns.ScrollItem.Pattern.ScrollIntoView();
+            Thread.Sleep(100);
+            return true;
+        }
 
-        element.Patterns.ScrollItem.Pattern.ScrollIntoView();
-        Thread.Sleep(100);
-        return true;
+        return ScrollIntoViewViaAncestors(element);
     }
 
     public static void EnsureWindowForeground(AutomationElement window)
@@ -929,5 +962,102 @@ public class AutomationEngine : IDisposable
         {
             return false;
         }
+    }
+
+    private static AutomationElement? FindAncestorByControlType(AutomationElement element, ControlType controlType)
+    {
+        var current = element;
+        while (current is not null)
+        {
+            try { current = current.Parent; }
+            catch { return null; }
+
+            if (current is null) return null;
+
+            if (current.Properties.ControlType.ValueOrDefault == controlType)
+                return current;
+        }
+
+        return null;
+    }
+
+    private static bool ScrollIntoViewViaAncestors(AutomationElement element)
+    {
+        var targetRect = element.BoundingRectangle;
+        if (targetRect.IsEmpty)
+            return false;
+
+        var scrolled = false;
+        var current = element;
+
+        while (current is not null)
+        {
+            try { current = current.Parent; }
+            catch { break; }
+
+            if (current is null) break;
+
+            if (current.Properties.ControlType.ValueOrDefault == ControlType.Window)
+                break;
+
+            if (!current.Patterns.Scroll.IsSupported)
+                continue;
+
+            var scroll = current.Patterns.Scroll.Pattern;
+            var viewportRect = current.BoundingRectangle;
+            if (viewportRect.IsEmpty)
+                continue;
+
+            // Re-read target position (may have changed from previous scroll)
+            targetRect = element.BoundingRectangle;
+
+            var needsVertical = scroll.VerticallyScrollable.Value
+                && (targetRect.Bottom > viewportRect.Bottom || targetRect.Top < viewportRect.Top);
+            var needsHorizontal = scroll.HorizontallyScrollable.Value
+                && (targetRect.Right > viewportRect.Right || targetRect.Left < viewportRect.Left);
+
+            if (!needsVertical && !needsHorizontal)
+                continue;
+
+            var verticalPercent = -1.0; // no change
+            if (needsVertical)
+            {
+                var viewSize = scroll.VerticalViewSize.Value;
+                if (viewSize > 0 && viewSize < 100)
+                {
+                    var viewportHeight = viewportRect.Height;
+                    var targetCenter = targetRect.Top + targetRect.Height / 2.0;
+                    var relativePosition = targetCenter - viewportRect.Top;
+                    var contentHeight = viewportHeight / (viewSize / 100.0);
+                    var currentScroll = scroll.VerticalScrollPercent.Value;
+                    var currentOffset = currentScroll / 100.0 * (contentHeight - viewportHeight);
+                    var desiredOffset = currentOffset + relativePosition - viewportHeight / 2.0;
+                    verticalPercent = Math.Clamp(desiredOffset / (contentHeight - viewportHeight) * 100.0, 0, 100);
+                }
+            }
+
+            var horizontalPercent = -1.0;
+            if (needsHorizontal)
+            {
+                var viewSize = scroll.HorizontalViewSize.Value;
+                if (viewSize > 0 && viewSize < 100)
+                {
+                    var viewportWidth = viewportRect.Width;
+                    var targetCenter = targetRect.Left + targetRect.Width / 2.0;
+                    var relativePosition = targetCenter - viewportRect.Left;
+                    var contentWidth = viewportWidth / (viewSize / 100.0);
+                    var currentScroll = scroll.HorizontalScrollPercent.Value;
+                    var currentOffset = currentScroll / 100.0 * (contentWidth - viewportWidth);
+                    var desiredOffset = currentOffset + relativePosition - viewportWidth / 2.0;
+                    horizontalPercent = Math.Clamp(desiredOffset / (contentWidth - viewportWidth) * 100.0, 0, 100);
+                }
+            }
+
+            scroll.SetScrollPercent(horizontalPercent, verticalPercent);
+            Thread.Sleep(100);
+            scrolled = true;
+        }
+
+        return scrolled;
     }
 }
