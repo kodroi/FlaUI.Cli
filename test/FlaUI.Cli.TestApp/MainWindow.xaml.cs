@@ -53,6 +53,10 @@ public partial class MainWindow : Window
         VirtualizedCombo.SelectedIndex = -1;
         TestSlider.Value = 50;
         TestGrid.SelectedIndex = -1;
+        ScrollTestList.SelectedIndex = -1;
+        if (ScrollTestList.Items.Count > 0)
+            ScrollTestList.ScrollIntoView(ScrollTestList.Items[0]);
+        TestScrollViewer.ScrollToTop();
         StatusLabel.Text = "Ready";
     }
 
