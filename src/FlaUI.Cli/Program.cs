@@ -10,6 +10,8 @@ using FlaUI.Cli.Commands.Wait;
 using FlaUI.Cli.Commands.Window;
 using FlaUI.Cli.Infrastructure;
 
+DpiContext.InitializeProcess();
+
 var sessionOption = new Option<string?>("--session") { Description = "Path to session JSON file. Auto-detected from the working directory if not specified", Recursive = true };
 
 var rootCommand = new RootCommand("FlaUI CLI — automate Windows desktop apps from the terminal");

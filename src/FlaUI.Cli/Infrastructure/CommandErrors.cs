@@ -14,11 +14,12 @@ internal static class CommandErrors
     internal static ErrorResult FromException(Exception exception) => new(false, exception.Message,
         exception switch
         {
+            DpiUnavailableException => "dpi_unavailable",
             TimeoutException => "timeout",
             FormatException or ArgumentException or OverflowException => Code(exception.Message) == "invalid_handle" ? "invalid_handle" : "invalid_arguments",
             FileNotFoundException or DirectoryNotFoundException when exception.Message.Contains("session", StringComparison.OrdinalIgnoreCase) => "session_error",
             _ => Code(exception.Message)
-        });
+        }, Recovery: exception is DpiUnavailableException ? DpiUnavailableException.Recovery : null);
 
     internal static void Initialize(ParseResult parsed, string[] args)
     {

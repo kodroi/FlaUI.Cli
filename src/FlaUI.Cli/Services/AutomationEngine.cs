@@ -14,11 +14,14 @@ namespace FlaUI.Cli.Services;
 public class AutomationEngine : IDisposable
 {
     private readonly UIA3Automation _automation;
+    private readonly DpiContext _dpi;
     private Application? _application;
 
     public AutomationEngine()
     {
-        _automation = new UIA3Automation();
+        _dpi = DpiContext.Enter();
+        try { _automation = new UIA3Automation(); }
+        catch { _dpi.Dispose(); throw; }
     }
 
     public SelectorResolver CreateSelectorResolver()
@@ -570,6 +573,12 @@ public class AutomationEngine : IDisposable
 
         var pattern = element.Patterns.Transform.Pattern;
 
+        if (x.HasValue || y.HasValue || width.HasValue || height.HasValue)
+        {
+            DpiContext.RequireCoordinates();
+            TargetContext.SetCoordinates(element, element.BoundingRectangle);
+        }
+
         if (x.HasValue || y.HasValue)
         {
             if (!pattern.CanMove.Value)
@@ -848,9 +857,13 @@ public class AutomationEngine : IDisposable
 
     public static ScreenshotResult CaptureScreenshot(AutomationElement element, string outputPath)
     {
+        DpiContext.RequireCoordinates();
         var window = GetParentWindow(element);
         if (window is not null) TargetContext.Set(window);
-        using var image = Capture.Element(element);
+        var bounds = element.BoundingRectangle;
+        TargetContext.SetCoordinates(element, bounds, captureMethod: "desktopRegion");
+        DpiContext.RequireCoordinates();
+        using var image = Capture.Rectangle(bounds);
         var fullPath = Path.GetFullPath(outputPath);
         image.ToFile(fullPath);
         return new ScreenshotResult(true, "Screenshot saved.", fullPath,
@@ -871,8 +884,12 @@ public class AutomationEngine : IDisposable
 
     public void Dispose()
     {
-        _application?.Dispose();
-        _automation.Dispose();
+        try
+        {
+            _application?.Dispose();
+            _automation.Dispose();
+        }
+        finally { _dpi.Dispose(); }
         GC.SuppressFinalize(this);
     }
 
@@ -945,7 +962,7 @@ public class AutomationEngine : IDisposable
         return Guid.NewGuid().ToString("N")[..8];
     }
 
-    private static AutomationElement? GetParentWindow(AutomationElement element)
+    internal static AutomationElement? GetParentWindow(AutomationElement element)
     {
         var current = element;
         while (current is not null)
@@ -970,6 +987,7 @@ public class AutomationEngine : IDisposable
 
     private static void FocusAndClick(AutomationElement element, bool doubleClick = false, bool rightClick = false)
     {
+        DpiContext.RequireCoordinates();
         var window = GetParentWindow(element);
         if (window is not null)
         {
@@ -978,12 +996,14 @@ public class AutomationEngine : IDisposable
                 NativeInterop.BringToFront(handle);
         }
 
-        if (doubleClick)
-            element.DoubleClick();
-        else if (rightClick)
-            element.RightClick();
-        else
-            element.Click();
+        var point = element.GetClickablePoint();
+        TargetContext.SetCoordinates(element, element.BoundingRectangle, point);
+        DpiContext.RequireCoordinates();
+        Mouse.Position = point;
+        if (!NativeInterop.GetPhysicalCursorPos(out var actual) || actual != point)
+            throw new InvalidOperationException("Could not position the physical cursor at the target; no mouse button was dispatched.");
+        if (doubleClick) Mouse.DoubleClick();
+        else Mouse.Click(rightClick ? MouseButton.Right : MouseButton.Left);
     }
 
     private static bool IsProcessAlive(int pid)

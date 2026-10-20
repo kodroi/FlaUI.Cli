@@ -26,6 +26,7 @@ public static partial class NativeInterop
 
     internal static (string Title, string ClassName, Models.BoundsInfo Bounds) ReadWindow(IntPtr handle)
     {
+        DpiContext.RequireCoordinates();
         var title = new char[32768];
         var className = new char[256];
         var titleLength = GetWindowText(handle, title, title.Length);

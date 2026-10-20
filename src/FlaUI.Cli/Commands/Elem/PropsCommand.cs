@@ -41,6 +41,7 @@ public static class PropsCommand
                 }
 
                 var bounds = element.BoundingRectangle;
+                TargetContext.SetCoordinates(element, bounds);
 
                 JsonOutput.Write(new ElementPropsResult(
                     Success: true,

@@ -133,6 +133,7 @@ public static class FindCommand
 
         sessionManager.Save(sessionPath, session);
         TargetContext.Set(window);
+        TargetContext.SetCoordinates(element, bounds);
 
         JsonOutput.Write(new ElementFindResult(
             Success: true,

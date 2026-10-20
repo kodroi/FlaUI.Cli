@@ -1,4 +1,4 @@
-# flaui
+﻿# flaui
 
 **Let your AI agent navigate your app, verify its own changes, and write the tests.**
 
@@ -543,6 +543,20 @@ flaui elem transform --id <id> [--x <x>] [--y <y>] [--width <w>] [--height <h>] 
 | `--window` | No | Window handle (hex) to target |
 
 At least one transform option must be specified. Returns `canMove`, `canResize`, and `canRotate` capabilities.
+
+### Display scaling and physical coordinates
+
+The CLI establishes and verifies a PerMonitorV2 DPI context for desktop automation. Callers do not need `__COMPAT_LAYER=HIGHDPIAWARE` or their own coordinate scaling.
+
+Screen bounds, mouse points, screenshot regions, and transform position/size options use **physical desktop pixels**. Coordinates can be negative on monitors left of or above the primary display. Scroll percentages and rotation degrees retain their existing units.
+
+Screenshots retain native pixels without resizing: a window measuring 600 by 420 logical units can produce a 1200 by 840 image at 200%. Existing `width` and `height` fields describe the saved image. Callers relying on the old DPI-virtualized dimensions should update their expectations and remove compensating conversions.
+
+Targeted results add `coordinateContext` with `coordinateSpace`, `clientAwareness`, physical `bounds`, target `windowAwareness`/`windowDpi`, and intersecting `monitors` with physical bounds and `scalePercent`. Mouse fallbacks include `inputPoint`; screenshots include `captureMethod: "desktopRegion"`. Context is refreshed for each operation, including after moving a window between monitors. A window spanning monitors reports each intersection instead of one blanket scale. Window DPI describes the target application's awareness: an unaware window can report 96 even on a scaled monitor. Missing optional metadata has `queryError` and is not replaced by a guessed scale.
+
+If the executing DPI context cannot be verified, coordinate-dependent operations return `success: false`, `errorCode: "dpi_unavailable"`, recovery details, and a nonzero exit status before capturing or dispatching mouse input. Coordinate-independent UI Automation patterns remain available. Batch steps follow the same rules and preserve the inner failure details.
+
+Capture still copies the target's desktop region. A covering application can appear in that image; `desktopRegion` does not promise an occlusion-independent window image. See [DPI acceptance testing](docs/testing/dpi-acceptance.md) for real-display coverage and checks.
 
 ### Dependable automation and compatibility
 
