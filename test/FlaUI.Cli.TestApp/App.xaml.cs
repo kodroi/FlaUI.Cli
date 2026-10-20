@@ -11,6 +11,7 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (e.Args.Contains("flaui-fixture-dpi")) StartupUri = new Uri("DpiTestWindow.xaml", UriKind.Relative);
         if (e.Args.Contains("flaui-fixture-slow")) Thread.Sleep(1500);
         if (e.Args.Contains("flaui-fixture-noisy"))
         {

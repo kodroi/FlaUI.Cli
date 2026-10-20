@@ -318,4 +318,9 @@ public record ErrorResult(
     string? Message,
     string? ErrorCode = null,
     string? Command = null,
-    Dictionary<string, string>? Input = null);
+    Dictionary<string, string>? Input = null,
+    string? Recovery = null,
+    string? EffectiveWindowHandle = null,
+    string? EffectiveWindowTitle = null,
+    bool? TargetFallback = null,
+    System.Text.Json.Nodes.JsonObject? CoordinateContext = null);

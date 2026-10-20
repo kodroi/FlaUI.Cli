@@ -51,9 +51,12 @@ public class BatchExecutor
             }
             catch (Exception ex)
             {
+                var error = CommandErrors.FromException(ex) with { Command = step.Cmd, Input = step.Args };
+                var errorNode = JsonSerializer.SerializeToNode(error, JsonOutput.GetOptions())!.AsObject();
+                TargetContext.AddTo(errorNode);
                 _stepResults.Add(null);
                 results.Add(new BatchStepResult(i, step.Cmd, false, ex.Message, null,
-                    new ErrorResult(false, ex.Message, CommandErrors.Code(ex.Message), step.Cmd, step.Args)));
+                    errorNode.Deserialize<ErrorResult>(JsonOutput.GetOptions())));
                 failed++;
 
                 if (!continueOnError)
@@ -151,6 +154,7 @@ public class BatchExecutor
         var elementId = Guid.NewGuid().ToString("N")[..8];
         var element = result.Element;
         var bounds = element.BoundingRectangle;
+        TargetContext.SetCoordinates(element, bounds);
 
         SessionManager.AddElement(_session, elementId, new ElementEntry
         {

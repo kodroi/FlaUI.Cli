@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,10 +18,12 @@ public class CliRunner
     };
 
     private readonly string _cliPath;
+    private readonly string? _prefix;
 
-    public CliRunner(string cliPath)
+    public CliRunner(string cliPath, string? prefix = null)
     {
         _cliPath = cliPath;
+        _prefix = prefix;
     }
 
     public async Task<CliResult> RunAsync(string arguments, int timeoutMs = 30000)
@@ -36,12 +38,13 @@ public class CliRunner
         process.StartInfo = new ProcessStartInfo
         {
             FileName = _cliPath,
-            Arguments = arguments,
+            Arguments = _prefix is null ? arguments : $"{_prefix} {arguments}",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        process.StartInfo.Environment.Remove("__COMPAT_LAYER");
         process.EnableRaisingEvents = true;
 
         // Use TaskCompletionSource tied to the Exited event.
