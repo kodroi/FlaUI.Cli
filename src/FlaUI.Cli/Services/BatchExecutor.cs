@@ -1,4 +1,6 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -11,21 +13,20 @@ public class BatchExecutor
     private readonly SessionManager _sessionManager;
     private readonly SessionFile _session;
     private readonly string _sessionPath;
-    private readonly AutomationElement _mainWindow;
-    private readonly List<object?> _stepResults = [];
+
+    private readonly List<JsonNode?> _stepResults = [];
 
     public BatchExecutor(
         AutomationEngine engine,
         SessionManager sessionManager,
         SessionFile session,
-        string sessionPath,
-        AutomationElement mainWindow)
+        string sessionPath)
     {
         _engine = engine;
         _sessionManager = sessionManager;
         _session = session;
         _sessionPath = sessionPath;
-        _mainWindow = mainWindow;
+
     }
 
     public BatchResult Execute(List<BatchStep> steps, bool continueOnError)
@@ -37,19 +38,22 @@ public class BatchExecutor
         for (int i = 0; i < steps.Count; i++)
         {
             var step = steps[i];
-            var resolvedArgs = ResolveReferences(step.Args);
-
             try
             {
+                TargetContext.Reset();
+                var resolvedArgs = ResolveReferences(step.Args);
                 var result = Dispatch(step.Cmd, resolvedArgs);
-                _stepResults.Add(result);
-                results.Add(new BatchStepResult(i, step.Cmd, true, "OK", result));
+                var resultNode = JsonSerializer.SerializeToNode(result, JsonOutput.GetOptions());
+                if (resultNode is JsonObject resultObject) TargetContext.AddTo(resultObject);
+                _stepResults.Add(resultNode);
+                results.Add(new BatchStepResult(i, step.Cmd, true, "OK", resultNode));
                 succeeded++;
             }
             catch (Exception ex)
             {
                 _stepResults.Add(null);
-                results.Add(new BatchStepResult(i, step.Cmd, false, ex.Message, null));
+                results.Add(new BatchStepResult(i, step.Cmd, false, ex.Message, null,
+                    new ErrorResult(false, ex.Message, CommandErrors.Code(ex.Message), step.Cmd, step.Args)));
                 failed++;
 
                 if (!continueOnError)
@@ -58,6 +62,7 @@ public class BatchExecutor
         }
 
         _sessionManager.Save(_sessionPath, _session);
+        TargetContext.Reset();
 
         return new BatchResult(
             Success: failed == 0,
@@ -103,10 +108,11 @@ public class BatchExecutor
 
     private object? Dispatch(string cmd, Dictionary<string, string> args)
     {
+        if (cmd == "window list") return _engine.ListWindows();
         var windowHandle = args.GetValueOrDefault("window");
         var targetWindow = !string.IsNullOrEmpty(windowHandle)
-            ? _engine.ResolveWindow(long.Parse(windowHandle, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture))
-            : _mainWindow;
+            ? _engine.ResolveWindow(WindowHandleParser.Parse(windowHandle))
+            : _engine.ReattachFromSession(_session).MainWindow;
 
         return cmd switch
         {
@@ -121,7 +127,6 @@ public class BatchExecutor
             "elem keys" => DispatchKeys(args, targetWindow),
             "elem scroll-into-view" => DispatchScrollIntoView(args, targetWindow),
             "elem menu" => DispatchMenu(args, targetWindow),
-            "window list" => DispatchWindowList(),
             "window focus" => DispatchWindowFocus(args),
             "window close" => DispatchWindowClose(args),
             "screenshot" => DispatchScreenshot(args, targetWindow),
@@ -155,6 +160,7 @@ public class BatchExecutor
             ClassName = element.Properties.ClassName.ValueOrDefault,
             RuntimeId = element.Properties.RuntimeId.ValueOrDefault,
             SelectorQuality = result.Quality,
+            WindowHandle = window.Properties.NativeWindowHandle.ValueOrDefault.ToInt64(),
             LastVerified = DateTime.UtcNow
         });
 
@@ -164,7 +170,7 @@ public class BatchExecutor
             element.Properties.ControlType.ValueOrDefault.ToString(),
             result.Quality, result.Strategy,
             new BoundsInfo(bounds.X, bounds.Y, bounds.Width, bounds.Height),
-            WindowHandle: null);
+            WindowHandle: $"0x{window.Properties.NativeWindowHandle.ValueOrDefault.ToInt64():X}");
     }
 
     private ActionResult DispatchClick(Dictionary<string, string> args, AutomationElement window)
@@ -275,27 +281,11 @@ public class BatchExecutor
         return new MenuResult(true, $"Menu item '{clickedName}' clicked.", path, clickedName);
     }
 
-    private WindowListResult DispatchWindowList()
-    {
-        var windows = _engine.GetAllTopLevelWindows();
-        var items = windows.Select(w =>
-        {
-            var bounds = w.BoundingRectangle;
-            return new WindowInfoItem(
-                $"{w.Properties.NativeWindowHandle.ValueOrDefault.ToInt64():X}",
-                w.Title, w.IsModal,
-                w.Properties.ClassName.ValueOrDefault,
-                new BoundsInfo(bounds.X, bounds.Y, bounds.Width, bounds.Height));
-        }).ToList();
-
-        return new WindowListResult(true, $"Found {items.Count} window(s).", items);
-    }
 
     private WindowFocusResult DispatchWindowFocus(Dictionary<string, string> args)
     {
-        var handle = long.Parse(args["handle"], System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture);
-        var window = _engine.GetWindowByHandle(handle)
-            ?? throw new InvalidOperationException($"Window with handle 0x{args["handle"]} not found.");
+        var handle = WindowHandleParser.Parse(args["handle"]);
+        var window = _engine.ResolveWindow(handle);
 
         var hwnd = window.Properties.NativeWindowHandle.ValueOrDefault;
         NativeInterop.BringToFront(hwnd);
@@ -312,8 +302,8 @@ public class BatchExecutor
 
         if (!string.IsNullOrEmpty(handleStr))
         {
-            var handle = long.Parse(handleStr, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture);
-            window = _engine.GetWindowByHandle(handle);
+            var handle = WindowHandleParser.Parse(handleStr);
+            window = _engine.ResolveWindow(handle);
         }
         else if (!string.IsNullOrEmpty(title))
         {
@@ -326,7 +316,10 @@ public class BatchExecutor
 
         var closedHandle = $"{window.Properties.NativeWindowHandle.ValueOrDefault.ToInt64():X}";
         var closedTitle = window.Title;
-        window.Close();
+        TargetContext.Set(window);
+        TargetContext.Fallback = false;
+        if (window.Patterns.Window.IsSupported) window.Close();
+        else NativeInterop.CloseWindow(window.Properties.NativeWindowHandle.ValueOrDefault);
 
         return new WindowCloseResult(true, "Window closed.", closedHandle, closedTitle);
     }
@@ -346,24 +339,14 @@ public class BatchExecutor
 
     private AutomationElement ResolveElement(AutomationElement window, string elementId)
     {
-        var entry = SessionManager.GetElement(_session, elementId)
-            ?? throw new InvalidOperationException($"Element '{elementId}' not found in session.");
-
-        var resolver = _engine.CreateSelectorResolver();
-        var result = resolver.Resolve(window, entry.AutomationId, entry.Name,
-            entry.ControlType, entry.ClassName, 5000);
-
-        return result?.Element
+        return Commands.Elem.CommandHelper.ResolveElement(_engine, _sessionManager, _session, window, elementId)
             ?? throw new InvalidOperationException($"Element '{elementId}' not found in UI.");
     }
 
-    private static string? ExtractField(object? result, string fieldName)
+    private static string? ExtractField(JsonNode? result, string fieldName)
     {
-        if (result is null) return null;
-
-        var prop = result.GetType().GetProperty(fieldName,
-            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-
-        return prop?.GetValue(result)?.ToString();
+        if (result is JsonObject json)
+            return json.FirstOrDefault(property => property.Key.Equals(fieldName, StringComparison.OrdinalIgnoreCase)).Value?.ToString();
+        return null;
     }
 }

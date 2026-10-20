@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Text.Json;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -29,8 +29,7 @@ public static class BatchCommand
             if (string.IsNullOrEmpty(file) && string.IsNullOrEmpty(stepsJson))
             {
                 JsonOutput.Write(new ErrorResult(false, "Either --file or --steps must be specified."));
-                Environment.ExitCode = ExitCodes.Error;
-                return;
+                return ExitCodes.Error;
             }
 
             using var engine = new AutomationEngine();
@@ -44,24 +43,23 @@ public static class BatchCommand
                 if (batchInput?.Steps is null || batchInput.Steps.Count == 0)
                 {
                     JsonOutput.Write(new ErrorResult(false, "No steps found in batch input."));
-                    Environment.ExitCode = ExitCodes.Error;
-                    return;
+                    return ExitCodes.Error;
                 }
 
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
-                var (_, mainWindow) = engine.ReattachFromSession(session);
+                engine.Attach(session.Application.Pid);
 
-                var executor = new BatchExecutor(engine, sessionManager, session, sessionPath, mainWindow);
+                var executor = new BatchExecutor(engine, sessionManager, session, sessionPath);
                 var result = executor.Execute(batchInput.Steps, continueOnError);
 
                 JsonOutput.Write(result);
-                Environment.ExitCode = result.Success ? ExitCodes.Success : ExitCodes.Error;
+                return result.Success ? ExitCodes.Success : ExitCodes.Error;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

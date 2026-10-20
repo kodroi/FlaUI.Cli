@@ -1,4 +1,4 @@
-namespace FlaUI.Cli.IntegrationTests.Tests;
+﻿namespace FlaUI.Cli.IntegrationTests.Tests;
 
 [Collection("TestApp")]
 public class SessionNewWaitTitleTests
@@ -45,6 +45,7 @@ public class SessionNewWaitTitleTests
         var testAppPath = SolutionLocator.GetTestAppPath(solutionRoot);
         var sessionPath = Path.Combine(Path.GetTempPath(), $"flaui-wait-title-{Guid.NewGuid():N}.session.json");
 
+        int? launchedPid = null;
         try
         {
             var result = await _fixture.Cli.RunAsync(
@@ -55,9 +56,18 @@ public class SessionNewWaitTitleTests
             Assert.NotNull(error);
             Assert.False(error.Success);
             Assert.Contains("Timeout", error.Message);
+            using var json = System.Text.Json.JsonDocument.Parse(result.Stdout);
+            launchedPid = json.RootElement.GetProperty("pid").GetInt32();
+            using var app = System.Diagnostics.Process.GetProcessById(launchedPid.Value);
+            Assert.False(app.HasExited);
         }
         finally
         {
+            if (launchedPid is { } pid)
+            {
+                try { using var app = System.Diagnostics.Process.GetProcessById(pid); app.Kill(); app.WaitForExit(5000); }
+                catch (ArgumentException) { }
+            }
             if (File.Exists(sessionPath))
             {
                 await _fixture.Cli.RunAsync($"session end --close-app --session \"{sessionPath}\"");

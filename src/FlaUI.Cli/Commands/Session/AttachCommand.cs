@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -35,8 +35,7 @@ public static class AttachCommand
             if (pid is null && name is null && title is null)
             {
                 JsonOutput.Write(new ErrorResult(false, "Provide --pid, --name, or --title."));
-                Environment.ExitCode = ExitCodes.Error;
-                return;
+                return ExitCodes.Error;
             }
 
             using var engine = new AutomationEngine();
@@ -81,12 +80,12 @@ public static class AttachCommand
                     ProcessName: application.Name,
                     MainWindowTitle: mainWindow.Properties.Name.ValueOrDefault));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

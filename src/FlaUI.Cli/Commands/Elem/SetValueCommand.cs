@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -41,8 +41,7 @@ public static class SetValueCommand
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 AutomationEngine.SetValue(element, value);
@@ -59,12 +58,12 @@ public static class SetValueCommand
                     ElementId: elementId,
                     SelectorQuality: entry?.SelectorQuality));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

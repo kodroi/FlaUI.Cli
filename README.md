@@ -544,6 +544,22 @@ flaui elem transform --id <id> [--x <x>] [--y <y>] [--width <w>] [--height <h>] 
 
 At least one transform option must be specified. Returns `canMove`, `canResize`, and `canRotate` capabilities.
 
+### Dependable automation and compatibility
+
+Command results use exit code **0** for success, **1** for validation, session, timeout, launch, or UI Automation failure, and **3** for unresolved element/window lookups. Code **2** retains its existing meaning for a missing GitHub CLI. Operational failures now return nonzero instead of requiring callers to inspect `success` alone. `session status` can successfully report a dead process; that is an inspection result, not a successful interaction.
+
+Parsing errors and operational failures write one JSON document to stdout, retaining `success` and `message` and adding `errorCode`, `command`, and relevant `input` options. Error codes include `invalid_arguments`, `invalid_handle`, `session_error`, `not_found`, `timeout`, `launch_failed`, `automation_error`, and `batch_failed`. Help and version requests retain their readable output. Batch failures include structured per-step `error` details and return nonzero even with `--continue-on-error`.
+
+Every handle-taking command, including existing batch operations, accepts hexadecimal handles with or without `0x`; an unprefixed value remains hexadecimal. Returned handles can be reused unchanged. Scroll, range, and transform numbers use a decimal point in every regional setting: use `12.5`, not `12,5` or grouping separators. Non-finite values are rejected.
+
+`wait --title` now reliably selects the matched window for subsequent default-target operations. The selected target persists separately from application main-window metadata. If it closes, the next default-target command selects the application's main window. Explicit `--window` or `--handle` overrides do not change the stored selection and fail if unavailable. Interaction and screenshot results add `effectiveWindowHandle`, `effectiveWindowTitle`, and `targetFallback`; `session status` exposes these alongside its existing main-window fields. Element IDs retain owning-window information so responses identify the actual window used; an explicit window constrains element lookup to that window. Existing session files remain readable.
+
+Window listing preserves useful windows when optional patterns are missing. Unsupported `isModal` values are `null`; `complete` and `warnings` distinguish a complete empty list from missing windows or metadata. A decorative window without WindowPattern no longer invalidates the entire result.
+
+Application launch no longer passes the caller's redirected output handles to the application. Captured CLI stdout/stderr close while the application continues running; application console output is not forwarded through the CLI. `session new --timeout` bounds the main-window wait from launch, or `--wait-timeout` applies when `--wait-title` is supplied, with normal Windows scheduling tolerance. A window timeout returns `errorCode: "timeout"`, the launched `pid`, and recovery guidance, leaving that process running. Inspect it and attach once ready with `flaui session attach --pid <pid> --session <path>`; close it explicitly if no longer needed. Other session-creation failures retain cleanup behavior.
+
+These corrected defaults intentionally change failure exit statuses, numeric parsing, dialog targeting, and launch-timeout cleanup. Command names and existing response fields are retained; new response and session fields are additive, except optional modal state can now be null.
+
 ### `window list`
 
 List all top-level windows for the attached application.

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Capturing;
@@ -28,11 +28,7 @@ public class AutomationEngine : IDisposable
 
     public Application Launch(string path, string? args = null)
     {
-        var psi = new ProcessStartInfo(path);
-        if (!string.IsNullOrEmpty(args))
-            psi.Arguments = args;
-
-        _application = Application.Launch(psi);
+        _application = Application.Attach(ProcessLauncher.Launch(path, args));
         return _application;
     }
 
@@ -72,27 +68,27 @@ public class AutomationEngine : IDisposable
     {
         if (!IsProcessAlive(session.Application.Pid))
             throw new InvalidOperationException($"Process {session.Application.Pid} is no longer running.");
-
+        _application?.Dispose();
         _application = Application.Attach(session.Application.Pid);
-
-        var hwnd = new IntPtr(session.Application.MainWindowHandle);
-        if (!NativeInterop.IsWindow(hwnd))
+        TargetContext.Reset();
+        var selected = session.TargetWindowHandle ?? session.Application.MainWindowHandle;
+        AutomationElement target;
+        if (NativeInterop.BelongsToProcess(new IntPtr(selected), session.Application.Pid))
         {
-            // Re-discover main window
-            var mainWindow = _application.GetMainWindow(_automation, TimeSpan.FromSeconds(10));
-            if (mainWindow is null)
-                throw new InvalidOperationException("Could not find main window after reattachment.");
-
-            session.Application.MainWindowHandle = mainWindow.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
-            session.Application.MainWindowTitle = mainWindow.Properties.Name.ValueOrDefault;
-            return (_application, mainWindow);
+            target = _automation.FromHandle(new IntPtr(selected));
         }
-
-        var window = _application.GetMainWindow(_automation, TimeSpan.FromSeconds(10));
-        if (window is null)
-            throw new InvalidOperationException("Could not find main window.");
-
-        return (_application, window);
+        else
+        {
+            target = GetMainWindow();
+            TargetContext.Fallback = true;
+            session.Application.MainWindowHandle = target.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
+            session.Application.MainWindowTitle = target.Properties.Name.ValueOrDefault;
+        }
+        session.TargetWindowHandle = target.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
+        session.TargetWindowTitle = target.Properties.Name.ValueOrDefault;
+        TargetContext.Set(target);
+        if (session.SourcePath is not null) new SessionManager().Save(session.SourcePath, session);
+        return (_application, target);
     }
 
     public AutomationElement GetMainWindow(TimeSpan? timeout = null)
@@ -668,6 +664,38 @@ public class AutomationEngine : IDisposable
         return windows.ToArray();
     }
 
+    public WindowListResult ListWindows()
+    {
+        if (_application is null) throw new InvalidOperationException("No application attached.");
+        var items = new List<WindowInfoItem>();
+        var warnings = new List<string>();
+        foreach (var handle in NativeInterop.GetProcessWindowHandles(_application.ProcessId))
+        {
+            try
+            {
+                var basic = NativeInterop.ReadWindow(handle);
+                bool? modal = null;
+                try
+                {
+                    var element = _automation.FromHandle(handle);
+                    if (element.Patterns.Window.IsSupported)
+                        modal = element.Patterns.Window.Pattern.IsModal.Value;
+                    else
+                        warnings.Add($"0x{handle.ToInt64():X}: WindowPattern unavailable.");
+                }
+                catch (Exception ex) { warnings.Add($"0x{handle.ToInt64():X}: optional window metadata unavailable: {ex.Message}"); }
+                if (!NativeInterop.IsWindow(handle))
+                {
+                    warnings.Add($"0x{handle.ToInt64():X}: window vanished.");
+                    continue;
+                }
+                items.Add(new WindowInfoItem($"{handle.ToInt64():X}", basic.Title, modal, basic.ClassName, basic.Bounds));
+            }
+            catch (Exception ex) { warnings.Add($"0x{handle.ToInt64():X}: {ex.Message}"); }
+        }
+        return new WindowListResult(true, $"Found {items.Count} window(s).", items, warnings.Count == 0, warnings);
+    }
+
     public Window? GetWindowByHandle(long handle)
     {
         var windows = GetAllTopLevelWindows();
@@ -675,15 +703,19 @@ public class AutomationEngine : IDisposable
             w.Properties.NativeWindowHandle.ValueOrDefault.ToInt64() == handle);
     }
 
-    public AutomationElement ResolveWindow(long? windowHandle)
+    public Window ResolveWindow(long? windowHandle)
     {
         if (windowHandle is null)
-            return GetMainWindow();
+            return GetMainWindow().AsWindow();
 
+        TargetContext.Reset();
+        TargetContext.Explicit = true;
         var window = GetWindowByHandle(windowHandle.Value);
         if (window is null)
             throw new InvalidOperationException($"Window with handle 0x{windowHandle.Value:X} not found.");
 
+        TargetContext.Fallback = false;
+        TargetContext.Set(window);
         return window;
     }
 
@@ -816,6 +848,8 @@ public class AutomationEngine : IDisposable
 
     public static ScreenshotResult CaptureScreenshot(AutomationElement element, string outputPath)
     {
+        var window = GetParentWindow(element);
+        if (window is not null) TargetContext.Set(window);
         using var image = Capture.Element(element);
         var fullPath = Path.GetFullPath(outputPath);
         image.ToFile(fullPath);
@@ -853,7 +887,8 @@ public class AutomationEngine : IDisposable
             ClassName = element.Properties.ClassName.ValueOrDefault,
             RuntimeId = element.Properties.RuntimeId.ValueOrDefault,
             SelectorQuality = ClassifyElement(element),
-            LastVerified = DateTime.UtcNow
+            LastVerified = DateTime.UtcNow,
+            WindowHandle = GetParentWindow(element)?.Properties.NativeWindowHandle.ValueOrDefault.ToInt64()
         };
         session.Elements[elementId] = entry;
 

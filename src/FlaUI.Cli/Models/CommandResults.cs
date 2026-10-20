@@ -1,4 +1,4 @@
-namespace FlaUI.Cli.Models;
+﻿namespace FlaUI.Cli.Models;
 
 public record SessionNewResult(
     bool Success,
@@ -145,14 +145,16 @@ public record AuditIssue(
 public record WindowInfoItem(
     string Handle,
     string? Title,
-    bool IsModal,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.Never)] bool? IsModal,
     string? ClassName,
     BoundsInfo? Bounds);
 
 public record WindowListResult(
     bool Success,
     string? Message,
-    List<WindowInfoItem>? Windows);
+    List<WindowInfoItem>? Windows,
+    bool Complete = true,
+    List<string>? Warnings = null);
 
 public record WindowFocusResult(
     bool Success,
@@ -191,7 +193,8 @@ public record BatchStepResult(
     string? Command,
     bool Success,
     string? Message,
-    object? Result);
+    object? Result,
+    ErrorResult? Error = null);
 
 public record ScreenshotResult(
     bool Success,
@@ -312,4 +315,7 @@ public record WindowStateResult(
 
 public record ErrorResult(
     bool Success,
-    string? Message);
+    string? Message,
+    string? ErrorCode = null,
+    string? Command = null,
+    Dictionary<string, string>? Input = null);

@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -57,13 +57,11 @@ public static class FindCommand
                     var result = resolver.Resolve(targetWindow, aid, name, type, cls, timeout);
                     if (result is not null)
                     {
-                        WriteFoundResult(result, targetWindow, session, sessionPath, sessionManager);
-                        return;
+                        return WriteFoundResult(result, targetWindow, session, sessionPath, sessionManager);
                     }
 
                     JsonOutput.Write(new ErrorResult(false, "Element not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 // Multi-window search: try main window first, then all others
@@ -77,8 +75,7 @@ public static class FindCommand
                     var result = resolver.Resolve(mainWindow, aid, name, type, cls, perWindowTimeout);
                     if (result is not null)
                     {
-                        WriteFoundResult(result, mainWindow, session, sessionPath, sessionManager);
-                        return;
+                        return WriteFoundResult(result, mainWindow, session, sessionPath, sessionManager);
                     }
                 }
 
@@ -93,25 +90,24 @@ public static class FindCommand
                     var result = resolver.Resolve(window, aid, name, type, cls, perWindowTimeout);
                     if (result is not null)
                     {
-                        WriteFoundResult(result, window, session, sessionPath, sessionManager);
-                        return;
+                        return WriteFoundResult(result, window, session, sessionPath, sessionManager);
                     }
                 }
 
                 JsonOutput.Write(new ErrorResult(false, "Element not found."));
-                Environment.ExitCode = ExitCodes.Unresolvable;
+                return ExitCodes.Unresolvable;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 
         return command;
     }
 
-    private static void WriteFoundResult(
+    private static int WriteFoundResult(
         SelectorResult result,
         AutomationElement window,
         SessionFile session,
@@ -131,10 +127,12 @@ public static class FindCommand
             ClassName = element.Properties.ClassName.ValueOrDefault,
             RuntimeId = element.Properties.RuntimeId.ValueOrDefault,
             SelectorQuality = result.Quality,
-            LastVerified = DateTime.UtcNow
+            LastVerified = DateTime.UtcNow,
+            WindowHandle = winHandle
         });
 
         sessionManager.Save(sessionPath, session);
+        TargetContext.Set(window);
 
         JsonOutput.Write(new ElementFindResult(
             Success: true,
@@ -148,6 +146,6 @@ public static class FindCommand
             Bounds: new BoundsInfo(bounds.X, bounds.Y, bounds.Width, bounds.Height),
             WindowHandle: $"0x{winHandle:X}"));
 
-        Environment.ExitCode = ExitCodes.Success;
+        return ExitCodes.Success;
     }
 }

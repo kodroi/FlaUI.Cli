@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -44,8 +44,7 @@ public static class KeysCommand
                     if (target is null)
                     {
                         JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                        Environment.ExitCode = ExitCodes.Unresolvable;
-                        return;
+                        return ExitCodes.Unresolvable;
                     }
                 }
 
@@ -63,12 +62,12 @@ public static class KeysCommand
                     Keys: keysStr,
                     ElementId: elementId));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

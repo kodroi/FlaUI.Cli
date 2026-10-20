@@ -1,5 +1,4 @@
-using System.CommandLine;
-using System.Globalization;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -30,13 +29,12 @@ public static class FocusWindowCommand
                 var session = sessionManager.Load(sessionPath);
                 engine.ReattachFromSession(session);
 
-                var handle = long.Parse(handleStr, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-                var window = engine.GetWindowByHandle(handle);
+                var handle = WindowHandleParser.Parse(handleStr);
+                var window = engine.ResolveWindow(handle);
                 if (window is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Window with handle 0x{handleStr} not found."));
-                    Environment.ExitCode = ExitCodes.Error;
-                    return;
+                    return ExitCodes.Error;
                 }
 
                 AutomationEngine.EnsureWindowForeground(window);
@@ -47,12 +45,12 @@ public static class FocusWindowCommand
                     Handle: handleStr,
                     Title: window.Title));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

@@ -1,6 +1,5 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
-using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
 
 namespace FlaUI.Cli.Commands.Record;
@@ -32,12 +31,12 @@ public static class ExportCommand
                 File.WriteAllText(Path.GetFullPath(outPath), JsonOutput.Serialize(exportResult));
 
                 JsonOutput.Write(exportResult);
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -11,11 +11,11 @@ public static class TransformCommand
     {
         var idOption = new Option<string>("--id") { Description = "Element ID" };
         idOption.Required = true;
-        var xOption = new Option<double?>("--x") { Description = "X coordinate to move to" };
-        var yOption = new Option<double?>("--y") { Description = "Y coordinate to move to" };
-        var widthOption = new Option<double?>("--width") { Description = "Width to resize to" };
-        var heightOption = new Option<double?>("--height") { Description = "Height to resize to" };
-        var rotateOption = new Option<double?>("--rotate") { Description = "Degrees to rotate" };
+        var xOption = NumericOptions.Optional("--x", "X coordinate to move to");
+        var yOption = NumericOptions.Optional("--y", "Y coordinate to move to");
+        var widthOption = NumericOptions.Optional("--width", "Width to resize to");
+        var heightOption = NumericOptions.Optional("--height", "Height to resize to");
+        var rotateOption = NumericOptions.Optional("--rotate", "Degrees to rotate");
         var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("transform", "Move, resize, or rotate an element via the Transform pattern");
@@ -41,8 +41,7 @@ public static class TransformCommand
             if (!x.HasValue && !y.HasValue && !width.HasValue && !height.HasValue && !rotate.HasValue)
             {
                 JsonOutput.Write(new ErrorResult(false, "At least one transform option (--x, --y, --width, --height, --rotate) must be specified."));
-                Environment.ExitCode = ExitCodes.Error;
-                return;
+                return ExitCodes.Error;
             }
 
             using var engine = new AutomationEngine();
@@ -59,8 +58,7 @@ public static class TransformCommand
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 var result = AutomationEngine.TransformElement(element, elementId, x, y, width, height, rotate);
@@ -70,12 +68,12 @@ public static class TransformCommand
                 sessionManager.Save(sessionPath, session);
 
                 JsonOutput.Write(result);
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

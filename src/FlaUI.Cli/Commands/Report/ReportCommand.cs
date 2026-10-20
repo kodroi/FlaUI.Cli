@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.ComponentModel;
 using System.Diagnostics;
 using FlaUI.Cli.Infrastructure;
@@ -41,15 +41,13 @@ public static class ReportCommand
                 if (!IsGhInstalled())
                 {
                     JsonOutput.Write(new ErrorResult(false, "GitHub CLI (gh) is not installed. Install it from https://cli.github.com"));
-                    Environment.ExitCode = ExitCodes.GhNotInstalled;
-                    return;
+                    return ExitCodes.GhNotInstalled;
                 }
 
                 if (!IsGhAuthenticated())
                 {
                     JsonOutput.Write(new ErrorResult(false, "GitHub CLI is not authenticated. Run 'gh auth login' first."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 var (exitCode, output) = RunGh($"issue create --repo {Repo} --title \"{EscapeArg(title)}\" --body \"{EscapeArg(description)}\"");
@@ -57,18 +55,18 @@ public static class ReportCommand
                 {
                     var issueUrl = output.Trim();
                     JsonOutput.Write(new ReportResult(true, "Issue created successfully.", issueUrl));
-                    Environment.ExitCode = ExitCodes.Success;
+                    return ExitCodes.Success;
                 }
                 else
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Failed to create issue: {output.Trim()}"));
-                    Environment.ExitCode = ExitCodes.Error;
+                    return ExitCodes.Error;
                 }
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

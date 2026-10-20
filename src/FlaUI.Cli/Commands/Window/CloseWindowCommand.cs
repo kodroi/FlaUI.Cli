@@ -1,5 +1,4 @@
-using System.CommandLine;
-using System.Globalization;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -29,8 +28,7 @@ public static class CloseWindowCommand
             if (string.IsNullOrEmpty(handleStr) && string.IsNullOrEmpty(title))
             {
                 JsonOutput.Write(new ErrorResult(false, "Either --handle or --title must be specified."));
-                Environment.ExitCode = ExitCodes.Error;
-                return;
+                return ExitCodes.Error;
             }
 
             using var engine = new AutomationEngine();
@@ -46,8 +44,8 @@ public static class CloseWindowCommand
 
                 if (!string.IsNullOrEmpty(handleStr))
                 {
-                    var handle = long.Parse(handleStr, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-                    window = engine.GetWindowByHandle(handle);
+                    var handle = WindowHandleParser.Parse(handleStr);
+                    window = engine.ResolveWindow(handle);
                 }
                 else if (!string.IsNullOrEmpty(title))
                 {
@@ -59,10 +57,11 @@ public static class CloseWindowCommand
                 if (window is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, "Window not found."));
-                    Environment.ExitCode = ExitCodes.Error;
-                    return;
+                    return ExitCodes.Error;
                 }
 
+                TargetContext.Set(window);
+                TargetContext.Fallback = false;
                 var hwnd = window.Properties.NativeWindowHandle.ValueOrDefault;
                 var closedHandle = $"{hwnd.ToInt64():X}";
                 var closedTitle = window.Title;
@@ -87,12 +86,12 @@ public static class CloseWindowCommand
                     Handle: closedHandle,
                     Title: closedTitle));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

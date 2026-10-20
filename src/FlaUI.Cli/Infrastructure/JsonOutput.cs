@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace FlaUI.Cli.Infrastructure;
@@ -15,7 +15,13 @@ public static class JsonOutput
 
     public static void Write<T>(T value)
     {
-        Console.WriteLine(JsonSerializer.Serialize(value, Options));
+        var node = JsonSerializer.SerializeToNode(value, Options);
+        if (node is System.Text.Json.Nodes.JsonObject result)
+        {
+            CommandErrors.Enrich(result);
+            TargetContext.AddTo(result);
+        }
+        Console.WriteLine(node?.ToJsonString(Options));
     }
 
     public static string Serialize<T>(T value)

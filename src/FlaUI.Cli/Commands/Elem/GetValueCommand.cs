@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -40,8 +40,7 @@ public static class GetValueCommand
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 var value = AutomationEngine.GetValue(element);
@@ -61,12 +60,12 @@ public static class GetValueCommand
                     Value: value,
                     SavedAs: saveName));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 
