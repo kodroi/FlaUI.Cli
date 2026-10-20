@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -27,24 +27,19 @@ public static class StatusCommand
                 string? mainWindowTitle = session.Application.MainWindowTitle;
                 string? mainWindowHandle = null;
 
-                if (processAlive && windowValid)
+                if (processAlive)
                 {
-                    try
-                    {
-                        using var engine = new AutomationEngine();
-                        var (_, mainWindow) = engine.ReattachFromSession(session);
-                        mainWindowTitle = mainWindow.Properties.Name.ValueOrDefault;
-                        mainWindowHandle = $"0x{mainWindow.Properties.NativeWindowHandle.ValueOrDefault.ToInt64():X}";
-
-                        session.Application.MainWindowTitle = mainWindowTitle;
-                        sessionManager.Save(sessionPath, session);
-                    }
-                    catch
-                    {
-                        // Fall back to stored values
-                    }
+                    using var engine = new AutomationEngine();
+                    engine.ReattachFromSession(session);
+                    var mainWindow = engine.GetMainWindow();
+                    mainWindowTitle = mainWindow.Properties.Name.ValueOrDefault;
+                    var handle = mainWindow.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
+                    mainWindowHandle = $"0x{handle:X}";
+                    windowValid = true;
+                    session.Application.MainWindowHandle = handle;
+                    session.Application.MainWindowTitle = mainWindowTitle;
+                    sessionManager.Save(sessionPath, session);
                 }
-
                 JsonOutput.Write(new SessionStatusResult(
                     Success: true,
                     Message: "Session status retrieved.",
@@ -56,12 +51,12 @@ public static class StatusCommand
                     MainWindowTitle: mainWindowTitle,
                     MainWindowHandle: mainWindowHandle));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

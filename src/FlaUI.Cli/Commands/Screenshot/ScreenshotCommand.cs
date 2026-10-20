@@ -1,5 +1,4 @@
-using System.CommandLine;
-using System.Globalization;
+﻿using System.CommandLine;
 using FlaUI.Cli.Commands.Elem;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -56,12 +55,12 @@ public static class ScreenshotCommand
 
                 var result = AutomationEngine.CaptureScreenshot(target, output);
                 JsonOutput.Write(result);
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 
@@ -76,20 +75,16 @@ public static class ScreenshotCommand
         string? elementId,
         string? windowHandle)
     {
+        var selectedWindow = string.IsNullOrEmpty(windowHandle)
+            ? mainWindow : engine.ResolveWindow(WindowHandleParser.Parse(windowHandle));
         if (!string.IsNullOrEmpty(elementId))
         {
-            var element = CommandHelper.ResolveElement(engine, sessionManager, session, mainWindow, elementId);
+            var element = CommandHelper.ResolveElement(engine, sessionManager, session, selectedWindow, elementId);
             if (element is null)
                 throw new InvalidOperationException($"Element '{elementId}' not found.");
             return element;
         }
 
-        if (!string.IsNullOrEmpty(windowHandle))
-        {
-            var handle = long.Parse(windowHandle, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-            return engine.ResolveWindow(handle);
-        }
-
-        return mainWindow;
+        return selectedWindow;
     }
 }

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.Json;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -39,9 +39,18 @@ public class SessionManager
 
     public SessionFile Load(string path)
     {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return JsonSerializer.Deserialize<SessionFile>(stream, _jsonOptions)
-               ?? throw new InvalidOperationException("Failed to deserialize session file.");
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var session = JsonSerializer.Deserialize<SessionFile>(stream, _jsonOptions)
+                   ?? throw new InvalidOperationException("Failed to deserialize session file.");
+            session.SourcePath = Path.GetFullPath(path);
+            return session;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            throw new InvalidOperationException($"Could not load session '{path}': {ex.Message}", ex);
+        }
     }
 
     public void Save(string path, SessionFile session)
@@ -69,7 +78,7 @@ public class SessionManager
         if (session.Application.MainWindowHandle == 0)
             return false;
 
-        return NativeInterop.IsWindow(new IntPtr(session.Application.MainWindowHandle));
+        return NativeInterop.BelongsToProcess(new IntPtr(session.Application.MainWindowHandle), session.Application.Pid);
     }
 
     public static void AddElement(SessionFile session, string elementId, ElementEntry entry)

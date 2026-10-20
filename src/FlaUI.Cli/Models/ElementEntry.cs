@@ -1,4 +1,4 @@
-namespace FlaUI.Cli.Models;
+﻿namespace FlaUI.Cli.Models;
 
 public class ElementEntry
 {
@@ -9,4 +9,5 @@ public class ElementEntry
     public int[]? RuntimeId { get; set; }
     public SelectorQuality SelectorQuality { get; set; }
     public DateTime LastVerified { get; set; }
+    public long? WindowHandle { get; set; }
 }

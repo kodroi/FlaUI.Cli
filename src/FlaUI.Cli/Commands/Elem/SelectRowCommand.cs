@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -41,8 +41,7 @@ public static class SelectRowCommand
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 var result = AutomationEngine.SelectRow(element, elementId, row);
@@ -52,12 +51,12 @@ public static class SelectRowCommand
                 sessionManager.Save(sessionPath, session);
 
                 JsonOutput.Write(result);
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

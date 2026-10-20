@@ -1,4 +1,4 @@
-using FlaUI.Core.AutomationElements;
+﻿using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
@@ -60,12 +60,12 @@ public static class AuditCommand
                     File.WriteAllText(Path.GetFullPath(outPath), JsonOutput.Serialize(result));
 
                 JsonOutput.Write(result);
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

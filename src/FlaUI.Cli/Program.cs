@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Commands.Audit;
 using FlaUI.Cli.Commands.Batch;
 using FlaUI.Cli.Commands.Elem;
@@ -94,4 +94,21 @@ rootCommand.Add(ReportCommand.Create(sessionOption));
 
 UpdateChecker.RunInBackground();
 
-return await rootCommand.Parse(args).InvokeAsync();
+try
+{
+    var parsed = rootCommand.Parse(args);
+    CommandErrors.Initialize(parsed, args);
+    if (parsed.Errors.Count > 0)
+    {
+        JsonOutput.Write(new { success = false, message = string.Join(" ", parsed.Errors.Select(e => e.Message)), errorCode = "invalid_arguments" });
+        return ExitCodes.Error;
+    }
+    var code = await parsed.InvokeAsync(new InvocationConfiguration { EnableDefaultExceptionHandler = false });
+    if (CommandErrors.LastErrorCode == "not_found") return ExitCodes.Unresolvable;
+    return CommandErrors.Failed && code == 0 ? ExitCodes.Error : code;
+}
+catch (Exception ex)
+{
+    JsonOutput.Write(CommandErrors.FromException(ex));
+    return ExitCodes.Error;
+}

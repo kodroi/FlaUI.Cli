@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Diagnostics;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -36,8 +36,7 @@ public static class WaitCommand
             if (string.IsNullOrEmpty(aid) && string.IsNullOrEmpty(title))
             {
                 JsonOutput.Write(new ErrorResult(false, "Either --aid or --title must be specified."));
-                Environment.ExitCode = ExitCodes.Error;
-                return;
+                return ExitCodes.Error;
             }
 
             using var engine = new AutomationEngine();
@@ -53,24 +52,24 @@ public static class WaitCommand
 
                 if (!string.IsNullOrEmpty(title))
                 {
-                    WaitForWindowTitle(engine, sessionManager, session, sessionPath, title, timeout, sw);
+                    return WaitForWindowTitle(engine, sessionManager, session, sessionPath, title, timeout, sw);
                 }
                 else
                 {
-                    WaitForElement(engine, mainWindow, aid!, expectedValue, expectedState, timeout, sw);
+                    return WaitForElement(engine, mainWindow, aid!, expectedValue, expectedState, timeout, sw);
                 }
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 
         return command;
     }
 
-    private static void WaitForElement(
+    private static int WaitForElement(
         AutomationEngine engine,
         Core.AutomationElements.AutomationElement mainWindow,
         string aid,
@@ -114,8 +113,7 @@ public static class WaitCommand
                         Message: "Condition met.",
                         Elapsed: sw.ElapsedMilliseconds));
 
-                    Environment.ExitCode = ExitCodes.Success;
-                    return;
+                    return ExitCodes.Success;
                 }
             }
             else if (expectedState?.ToLowerInvariant() == "hidden")
@@ -125,18 +123,17 @@ public static class WaitCommand
                     Message: "Element is hidden (not found).",
                     Elapsed: sw.ElapsedMilliseconds));
 
-                Environment.ExitCode = ExitCodes.Success;
-                return;
+                return ExitCodes.Success;
             }
 
             Thread.Sleep(100);
         }
 
         JsonOutput.Write(new ErrorResult(false, $"Timeout after {timeout}ms."));
-        Environment.ExitCode = ExitCodes.Error;
+        return ExitCodes.Error;
     }
 
-    private static void WaitForWindowTitle(
+    private static int WaitForWindowTitle(
         AutomationEngine engine,
         SessionManager sessionManager,
         SessionFile session,
@@ -157,8 +154,9 @@ public static class WaitCommand
                 var windowTitle = match.Properties.Name.ValueOrDefault;
                 var handleHex = $"0x{handle:X}";
 
-                session.Application.MainWindowHandle = handle;
-                session.Application.MainWindowTitle = windowTitle;
+                session.TargetWindowHandle = handle;
+                session.TargetWindowTitle = windowTitle;
+                TargetContext.Set(match);
                 sessionManager.Save(sessionPath, session);
 
                 JsonOutput.Write(new WaitResult(
@@ -168,14 +166,13 @@ public static class WaitCommand
                     WindowHandle: handleHex,
                     WindowTitle: windowTitle));
 
-                Environment.ExitCode = ExitCodes.Success;
-                return;
+                return ExitCodes.Success;
             }
 
             Thread.Sleep(100);
         }
 
         JsonOutput.Write(new ErrorResult(false, $"Timeout after {timeout}ms waiting for window title containing '{title}'."));
-        Environment.ExitCode = ExitCodes.Error;
+        return ExitCodes.Error;
     }
 }

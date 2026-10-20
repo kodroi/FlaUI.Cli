@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Core.Definitions;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -31,8 +31,7 @@ public static class SetDockCommand
             if (!Enum.TryParse<DockPosition>(positionStr, ignoreCase: true, out var position))
             {
                 JsonOutput.Write(new ErrorResult(false, $"Invalid dock position '{positionStr}'. Use: top, bottom, left, right, fill, none."));
-                Environment.ExitCode = ExitCodes.Error;
-                return;
+                return ExitCodes.Error;
             }
 
             using var engine = new AutomationEngine();
@@ -49,8 +48,7 @@ public static class SetDockCommand
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 AutomationEngine.SetDockPosition(element, position);
@@ -66,12 +64,12 @@ public static class SetDockCommand
                     ElementId: elementId,
                     SelectorQuality: entry?.SelectorQuality));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

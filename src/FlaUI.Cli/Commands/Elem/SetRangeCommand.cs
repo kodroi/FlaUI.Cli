@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -11,7 +11,7 @@ public static class SetRangeCommand
     {
         var idOption = new Option<string>("--id") { Description = "Element ID" };
         idOption.Required = true;
-        var valueOption = new Option<double>("--value") { Description = "Value to set" };
+        var valueOption = NumericOptions.Required("--value", "Value to set");
         valueOption.Required = true;
         var windowOption = CommandHelper.CreateWindowOption();
 
@@ -41,8 +41,7 @@ public static class SetRangeCommand
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 AutomationEngine.SetRangeValue(element, value);
@@ -58,12 +57,12 @@ public static class SetRangeCommand
                     ElementId: elementId,
                     SelectorQuality: entry?.SelectorQuality));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

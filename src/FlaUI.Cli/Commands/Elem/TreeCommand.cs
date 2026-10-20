@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -43,25 +43,13 @@ public static class TreeCommand
 
                 if (!string.IsNullOrEmpty(rootId))
                 {
-                    var entry = SessionManager.GetElement(session, rootId);
-                    if (entry is null)
-                    {
-                        JsonOutput.Write(new ErrorResult(false, $"Element '{rootId}' not found in session."));
-                        Environment.ExitCode = ExitCodes.Error;
-                        return;
-                    }
-
-                    var resolver = engine.CreateSelectorResolver();
-                    var resolved = resolver.Resolve(targetWindow, entry.AutomationId, entry.Name,
-                        entry.ControlType, entry.ClassName);
+                    var resolved = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, rootId);
                     if (resolved is null)
                     {
                         JsonOutput.Write(new ErrorResult(false, $"Could not re-find element '{rootId}'."));
-                        Environment.ExitCode = ExitCodes.Unresolvable;
-                        return;
+                        return ExitCodes.Unresolvable;
                     }
-
-                    rootElement = resolved.Element;
+                    rootElement = resolved;
                 }
 
                 var tree = AutomationEngine.BuildTree(rootElement, depth, session);
@@ -72,12 +60,12 @@ public static class TreeCommand
                     Message: "Tree retrieved.",
                     Root: tree));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

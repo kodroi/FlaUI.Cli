@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Diagnostics;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -43,6 +43,8 @@ public static class NewCommand
 
             using var engine = new AutomationEngine();
             var sessionManager = new SessionManager();
+            int? launchedPid = null;
+            var launchTimer = Stopwatch.StartNew();
 
             try
             {
@@ -51,17 +53,19 @@ public static class NewCommand
                     : SessionManager.CreateSessionPath(app);
 
                 var application = engine.Launch(app, args);
-                Thread.Sleep(500);
+                launchedPid = application.ProcessId;
 
                 Core.AutomationElements.AutomationElement mainWindow;
 
                 if (!string.IsNullOrEmpty(waitTitle))
                 {
-                    mainWindow = WaitForWindowTitle(engine, waitTitle, waitTimeout);
+                    mainWindow = WaitForWindowTitle(engine, waitTitle, Math.Max(0, waitTimeout - (int)launchTimer.ElapsedMilliseconds));
                 }
                 else
                 {
-                    mainWindow = engine.GetMainWindow(TimeSpan.FromMilliseconds(timeout));
+                    var remaining = Math.Max(0, timeout - (int)launchTimer.ElapsedMilliseconds);
+                    try { mainWindow = engine.GetMainWindow(TimeSpan.FromMilliseconds(remaining)); }
+                    catch (InvalidOperationException ex) { throw new TimeoutException($"Timeout after {timeout}ms waiting for main window.", ex); }
                 }
 
                 var session = new SessionFile
@@ -89,13 +93,21 @@ public static class NewCommand
                     ProcessName: application.Name,
                     MainWindowTitle: mainWindow.Properties.Name.ValueOrDefault));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                engine.CloseApplication(force: true);
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                if (launchedPid is not null && ex is TimeoutException)
+                {
+                    JsonOutput.Write(new { success = false, message = ex.Message, errorCode = "timeout", pid = launchedPid,
+                        recovery = $"Application left running. Inspect it, then run: flaui session attach --pid {launchedPid} --session <path>" });
+                }
+                else
+                {
+                    engine.CloseApplication(force: true);
+                    JsonOutput.Write(new { success = false, message = ex.Message, errorCode = launchedPid is null ? "launch_failed" : "session_error" });
+                }
+                return ExitCodes.Error;
             }
         });
 
@@ -118,7 +130,7 @@ public static class NewCommand
             Thread.Sleep(100);
         }
 
-        throw new InvalidOperationException(
+        throw new TimeoutException(
             $"Timeout after {timeoutMs}ms waiting for window title containing '{title}'.");
     }
 }

@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -38,8 +38,7 @@ public static class MenuCommand
                 if (segments.Length == 0)
                 {
                     JsonOutput.Write(new ErrorResult(false, "Menu path cannot be empty."));
-                    Environment.ExitCode = ExitCodes.Error;
-                    return;
+                    return ExitCodes.Error;
                 }
 
                 var clickedItem = engine.NavigateMenu(targetWindow, segments);
@@ -56,12 +55,12 @@ public static class MenuCommand
                     Path: path,
                     ClickedItemName: clickedName));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 

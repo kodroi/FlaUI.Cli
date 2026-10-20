@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
 using FlaUI.Cli.Services;
@@ -33,12 +33,11 @@ public static class PropsCommand
                 var (_, mainWindow) = engine.ReattachFromSession(session);
                 var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = ResolveElementById(engine, sessionManager, session, targetWindow, elementId);
+                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
                 if (element is null)
                 {
                     JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
-                    Environment.ExitCode = ExitCodes.Unresolvable;
-                    return;
+                    return ExitCodes.Unresolvable;
                 }
 
                 var bounds = element.BoundingRectangle;
@@ -58,32 +57,16 @@ public static class PropsCommand
                     HelpText: element.Properties.HelpText.ValueOrDefault,
                     AcceleratorKey: element.Properties.AcceleratorKey.ValueOrDefault));
 
-                Environment.ExitCode = ExitCodes.Success;
+                return ExitCodes.Success;
             }
             catch (Exception ex)
             {
-                JsonOutput.Write(new ErrorResult(false, ex.Message));
-                Environment.ExitCode = ExitCodes.Error;
+                JsonOutput.Write(CommandErrors.FromException(ex));
+                return ExitCodes.Error;
             }
         });
 
         return command;
     }
 
-    internal static FlaUI.Core.AutomationElements.AutomationElement? ResolveElementById(
-        AutomationEngine engine,
-        SessionManager sessionManager,
-        SessionFile session,
-        FlaUI.Core.AutomationElements.AutomationElement mainWindow,
-        string elementId)
-    {
-        var entry = SessionManager.GetElement(session, elementId);
-        if (entry is null) return null;
-
-        var resolver = engine.CreateSelectorResolver();
-        var result = resolver.Resolve(mainWindow, entry.AutomationId, entry.Name,
-            entry.ControlType, entry.ClassName, 5000);
-
-        return result?.Element;
-    }
 }
