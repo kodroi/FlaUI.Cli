@@ -149,10 +149,10 @@ flaui elem find [--aid <id>] [--name <name>] [--type <type>] [--class <class>] [
 | `--name` | No | Element name to find |
 | `--type` | No | ControlType to find |
 | `--class` | No | ClassName to find |
-| `--timeout` | No | Search timeout in milliseconds (default: 10000) |
-| `--window` | No | Window handle (hex) to search in instead of the main window |
+| `--timeout` | No | Total search timeout across windows and selector strategies in milliseconds (default: 10000) |
+| `--window` | No | Window handle (hex) that limits the search to that window |
 
-Response includes `selectorQuality` and `selectorStrategy` so the agent knows how reliable the selector is.
+Without `--window`, each pass checks the selected window first, then the application's other top-level windows, before waiting to retry. The response includes `selectorQuality` and `selectorStrategy`.
 
 ### `elem tree`
 

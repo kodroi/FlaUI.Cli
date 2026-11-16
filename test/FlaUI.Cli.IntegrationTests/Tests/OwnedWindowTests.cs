@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace FlaUI.Cli.IntegrationTests.Tests;
 
 [Collection("TestApp")]
@@ -59,6 +61,35 @@ public class OwnedWindowTests
         finally
         {
             await CloseAboutDialog();
+        }
+    }
+
+    [Fact]
+    public async Task Find_UsesOneTimeoutAcrossWindowsAndSelectors()
+    {
+        var open = await _fixture.Cli.RunAsync($"elem menu --path \"Help > About\" {_fixture.SessionArg}");
+        Assert.Equal(0, open.ExitCode);
+
+        try
+        {
+            var wait = await _fixture.Cli.RunAsync($"wait --title About --timeout 5000 {_fixture.SessionArg}");
+            Assert.Equal(0, wait.ExitCode);
+
+            var stopwatch = Stopwatch.StartNew();
+            var result = await _fixture.Cli.RunAsync(
+                $"elem find --aid MissingAutomationId --name MissingElementName --type Button --timeout 500 {_fixture.SessionArg}");
+            stopwatch.Stop();
+
+            Assert.Equal(3, result.ExitCode);
+            var error = CliRunner.Deserialize<ErrorResult>(result.Stdout);
+            Assert.NotNull(error);
+            Assert.Contains("Element not found", error.Message, StringComparison.Ordinal);
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(3),
+                $"Search with a 500 ms budget took {stopwatch.Elapsed.TotalMilliseconds:F0} ms, including CLI startup.");
+        }
+        finally
+        {
+            await _fixture.Cli.RunAsync($"window close --title About {_fixture.SessionArg}");
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.Diagnostics;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Cli.Infrastructure;
 using FlaUI.Cli.Models;
@@ -16,7 +17,7 @@ public static class FindCommand
         var classOption = new Option<string?>("--class") { Description = "WPF/WinForms ClassName to match (e.g. \"TextBox\"). Gives 'fragile' selector quality" };
         var timeoutOption = new Option<int>("--timeout")
         {
-            Description = "How long to search before giving up, in milliseconds",
+            Description = "Total search timeout across all windows and selectors, in milliseconds",
             DefaultValueFactory = _ => 10000
         };
 
@@ -40,6 +41,7 @@ public static class FindCommand
             var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
+            var stopwatch = Stopwatch.StartNew();
             using var engine = new AutomationEngine();
             var sessionManager = new SessionManager();
 
@@ -47,52 +49,24 @@ public static class FindCommand
             {
                 var sessionPath = SessionManager.ResolveSessionPath(sessionFlag);
                 var session = sessionManager.Load(sessionPath);
-                var (_, mainWindow) = engine.ReattachFromSession(session);
+                var remaining = TimeSpan.FromMilliseconds(Math.Max(0, timeout - stopwatch.ElapsedMilliseconds));
+                var (_, selectedWindow) = engine.ReattachFromSession(session, remaining);
 
-                // If a specific window is targeted, search only that window
+                Func<IEnumerable<AutomationElement>> getWindows;
                 if (!string.IsNullOrEmpty(windowHandle))
                 {
-                    var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
-                    var resolver = engine.CreateSelectorResolver();
-                    var result = resolver.Resolve(targetWindow, aid, name, type, cls, timeout);
-                    if (result is not null)
-                    {
-                        return WriteFoundResult(result, targetWindow, session, sessionPath, sessionManager);
-                    }
-
-                    JsonOutput.Write(new ErrorResult(false, "Element not found."));
-                    return ExitCodes.Unresolvable;
+                    var targetWindow = CommandHelper.ResolveWindow(engine, selectedWindow, windowHandle);
+                    getWindows = () => [targetWindow];
                 }
-
-                // Multi-window search: try main window first, then all others
-                var allWindows = engine.GetAllTopLevelWindows();
-                var windowCount = Math.Max(allWindows.Length, 1);
-                var perWindowTimeout = Math.Max(timeout / windowCount, 2000);
-
-                // Fast path: main window first with short timeout
+                else
                 {
-                    var resolver = engine.CreateSelectorResolver();
-                    var result = resolver.Resolve(mainWindow, aid, name, type, cls, perWindowTimeout);
-                    if (result is not null)
-                    {
-                        return WriteFoundResult(result, mainWindow, session, sessionPath, sessionManager);
-                    }
+                    getWindows = () => SearchWindows(engine, selectedWindow, session.TargetWindowHandle);
                 }
 
-                // Search remaining windows
-                var mainHandle = mainWindow.Properties.NativeWindowHandle.ValueOrDefault;
-                foreach (var window in allWindows)
-                {
-                    var winHandle = window.Properties.NativeWindowHandle.ValueOrDefault;
-                    if (winHandle == mainHandle) continue;
-
-                    var resolver = engine.CreateSelectorResolver();
-                    var result = resolver.Resolve(window, aid, name, type, cls, perWindowTimeout);
-                    if (result is not null)
-                    {
-                        return WriteFoundResult(result, window, session, sessionPath, sessionManager);
-                    }
-                }
+                var resolver = engine.CreateSelectorResolver();
+                var found = resolver.ResolveAcrossWindows(getWindows, stopwatch, timeout, aid, name, type, cls);
+                if (found is { } match)
+                    return WriteFoundResult(match.Result, match.Window, session, sessionPath, sessionManager);
 
                 JsonOutput.Write(new ErrorResult(false, "Element not found."));
                 return ExitCodes.Unresolvable;
@@ -105,6 +79,18 @@ public static class FindCommand
         });
 
         return command;
+    }
+
+    private static IEnumerable<AutomationElement> SearchWindows(
+        AutomationEngine engine, AutomationElement selectedWindow, long? selectedHandle)
+    {
+        yield return selectedWindow;
+
+        foreach (var window in engine.GetAllTopLevelWindows())
+        {
+            if (window.Properties.NativeWindowHandle.ValueOrDefault.ToInt64() != selectedHandle)
+                yield return window;
+        }
     }
 
     private static int WriteFoundResult(

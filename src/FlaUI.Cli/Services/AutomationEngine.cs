@@ -67,7 +67,10 @@ public class AutomationEngine : IDisposable
         return _application;
     }
 
-    public (Application App, AutomationElement MainWindow) ReattachFromSession(SessionFile session)
+    public (Application App, AutomationElement MainWindow) ReattachFromSession(SessionFile session) =>
+        ReattachFromSession(session, mainWindowTimeout: null);
+
+    internal (Application App, AutomationElement MainWindow) ReattachFromSession(SessionFile session, TimeSpan? mainWindowTimeout)
     {
         if (!IsProcessAlive(session.Application.Pid))
             throw new InvalidOperationException($"Process {session.Application.Pid} is no longer running.");
@@ -82,7 +85,7 @@ public class AutomationEngine : IDisposable
         }
         else
         {
-            target = GetMainWindow();
+            target = GetMainWindow(mainWindowTimeout);
             TargetContext.Fallback = true;
             session.Application.MainWindowHandle = target.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
             session.Application.MainWindowTitle = target.Properties.Name.ValueOrDefault;
