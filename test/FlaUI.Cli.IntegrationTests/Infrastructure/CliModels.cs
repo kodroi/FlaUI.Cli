@@ -126,7 +126,7 @@ public record AuditIssue(
 public record WindowInfoItem(
     string? Handle,
     string? Title,
-    bool IsModal,
+    bool? IsModal,
     string? ClassName,
     BoundsInfo? Bounds);
 

@@ -8,6 +8,10 @@ namespace FlaUI.Cli.Commands.Wait;
 
 public static class WaitCommand
 {
+    private sealed record WindowTitleTarget(string Title);
+    private sealed record ElementTarget(string AutomationId, string? ExpectedValue, string? ExpectedState);
+    private union WaitTarget(WindowTitleTarget, ElementTarget);
+
     public static Command Create(Option<string?> sessionOption)
     {
         var aidOption = new Option<string?>("--aid") { Description = "AutomationId of the element to wait for (e.g. \"StatusLabel\")" };
@@ -28,12 +32,15 @@ public static class WaitCommand
         {
             var aid = parseResult.GetValue(aidOption);
             var title = parseResult.GetValue(titleOption);
-            var expectedValue = parseResult.GetValue(valueOption);
-            var expectedState = parseResult.GetValue(stateOption);
             var timeout = parseResult.GetValue(timeoutOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
 
-            if (string.IsNullOrEmpty(aid) && string.IsNullOrEmpty(title))
+            WaitTarget target;
+            if (!string.IsNullOrEmpty(title))
+                target = new WindowTitleTarget(title);
+            else if (!string.IsNullOrEmpty(aid))
+                target = new ElementTarget(aid, parseResult.GetValue(valueOption), parseResult.GetValue(stateOption));
+            else
             {
                 JsonOutput.Write(new ErrorResult(false, "Either --aid or --title must be specified."));
                 return ExitCodes.Error;
@@ -50,14 +57,12 @@ public static class WaitCommand
 
                 var sw = Stopwatch.StartNew();
 
-                if (!string.IsNullOrEmpty(title))
+                return target switch
                 {
-                    return WaitForWindowTitle(engine, sessionManager, session, sessionPath, title, timeout, sw);
-                }
-                else
-                {
-                    return WaitForElement(engine, mainWindow, aid!, expectedValue, expectedState, timeout, sw);
-                }
+                    WindowTitleTarget window => WaitForWindowTitle(engine, sessionManager, session, sessionPath, window.Title, timeout, sw),
+                    ElementTarget(var automationId, var expectedValue, var expectedState) =>
+                        WaitForElement(engine, mainWindow, automationId, expectedValue, expectedState, timeout, sw),
+                };
             }
             catch (Exception ex)
             {

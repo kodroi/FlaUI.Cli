@@ -27,6 +27,19 @@ public class WaitTitleTests
     }
 
     [Fact]
+    public async Task Wait_WithTitleAndAid_PrefersTitle()
+    {
+        var result = await _fixture.Cli.RunAsync(
+            $"wait --title \"Contact Form\" --aid NonExistentAutomationId12345 --timeout 5000 {_fixture.SessionArg}");
+
+        Assert.Equal(0, result.ExitCode);
+        var wait = CliRunner.Deserialize<WaitResult>(result.Stdout);
+        Assert.NotNull(wait);
+        Assert.True(wait.Success);
+        Assert.Contains("Contact Form", wait.WindowTitle);
+    }
+
+    [Fact]
     public async Task WaitTitle_CaseInsensitiveMatch()
     {
         var result = await _fixture.Cli.RunAsync(
