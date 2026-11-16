@@ -8,6 +8,10 @@ public class CommandFailureTests
     [InlineData("session status --session missing-dependability.session.json", "session_error")]
     [InlineData("session status --session timeout.session.json", "session_error")]
     [InlineData("elem scroll --id missing --vertical nonsense", "invalid_arguments")]
+    [InlineData("elem click", "invalid_arguments")]
+    [InlineData("elem click --id stored --aid SubmitButton", "invalid_arguments")]
+    [InlineData("elem get-value", "invalid_arguments")]
+    [InlineData("elem get-value --id stored --aid FirstNameInput", "invalid_arguments")]
     [InlineData("screenshot --unknown-option", "invalid_arguments")]
     public async Task Failure_HasNonzeroExitAndStructuredJson(string arguments, string code)
     {

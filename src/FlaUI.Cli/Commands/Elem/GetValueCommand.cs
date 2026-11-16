@@ -9,19 +9,18 @@ public static class GetValueCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find'" };
-        idOption.Required = true;
         var saveOption = new Option<string?>("--save") { Description = "Store the retrieved value in the session file under this variable name for later use" };
         var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("get-value", "Get an element's value");
-        command.Add(idOption);
+        var (idOption, aidOption) = CommandHelper.AddActionSelectorOptions(command);
         command.Add(saveOption);
         command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
-            var elementId = parseResult.GetValue(idOption)!;
+            var id = parseResult.GetValue(idOption);
+            var aid = parseResult.GetValue(aidOption);
             var saveName = parseResult.GetValue(saveOption);
             var windowHandle = parseResult.GetValue(windowOption);
             var sessionFlag = parseResult.GetValue(sessionOption);
@@ -36,13 +35,14 @@ public static class GetValueCommand
                 var (_, mainWindow) = engine.ReattachFromSession(session);
                 var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
-                if (element is null)
+                var target = CommandHelper.ResolveActionTarget(engine, sessionManager, session, targetWindow, id, aid, out var error);
+                if (target is not { } resolved)
                 {
-                    JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
+                    JsonOutput.Write(error);
                     return ExitCodes.Unresolvable;
                 }
 
+                var (element, elementId) = resolved;
                 var value = AutomationEngine.GetValue(element);
 
                 if (!string.IsNullOrEmpty(saveName) && value is not null)

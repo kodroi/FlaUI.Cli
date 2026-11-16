@@ -179,15 +179,17 @@ Returns AutomationId, Name, ControlType, ClassName, Bounds, IsEnabled, IsOffscre
 
 ### `elem click`
 
-Click an element.
+Click an element. Supply exactly one of `--id` or `--aid`. The AutomationId must match exactly one element in the selected window or the window specified by `--window`. Multiple matches return `ambiguous_selector` without clicking.
 
 ```bash
-flaui elem click --id <id> [--double] [--right]
+flaui elem click (--id <id> | --aid <automation-id>) [--window <handle>] [--double] [--right]
 ```
 
 | Option | Required | Description |
 |--------|----------|-------------|
-| `--id` | Yes | Element ID |
+| `--id` | One of two | Previously resolved element ID |
+| `--aid` | One of two | Unique AutomationId in the target window |
+| `--window` | No | Window handle (hex) to target |
 | `--double` | No | Double click |
 | `--right` | No | Right click |
 
@@ -245,15 +247,17 @@ flaui elem select --id <id> --item <item>
 
 ### `elem get-value`
 
-Get an element's current value.
+Get an element's current value. Supply exactly one of `--id` or `--aid`. An AutomationId must match exactly one element in the target window. Successful reads return an element ID for later commands.
 
 ```bash
-flaui elem get-value --id <id> [--save <name>]
+flaui elem get-value (--id <id> | --aid <automation-id>) [--window <handle>] [--save <name>]
 ```
 
 | Option | Required | Description |
 |--------|----------|-------------|
-| `--id` | Yes | Element ID |
+| `--id` | One of two | Previously resolved element ID |
+| `--aid` | One of two | Unique AutomationId in the target window |
+| `--window` | No | Window handle (hex) to target |
 | `--save` | No | Save the value to a session variable for later use |
 
 ### `elem get-state`

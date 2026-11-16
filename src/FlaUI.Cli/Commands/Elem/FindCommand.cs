@@ -100,22 +100,10 @@ public static class FindCommand
         string sessionPath,
         SessionManager sessionManager)
     {
-        var elementId = Guid.NewGuid().ToString("N")[..8];
         var element = result.Element;
         var bounds = element.BoundingRectangle;
         var winHandle = window.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
-
-        SessionManager.AddElement(session, elementId, new ElementEntry
-        {
-            AutomationId = element.Properties.AutomationId.ValueOrDefault,
-            Name = element.Properties.Name.ValueOrDefault,
-            ControlType = element.Properties.ControlType.ValueOrDefault.ToString(),
-            ClassName = element.Properties.ClassName.ValueOrDefault,
-            RuntimeId = element.Properties.RuntimeId.ValueOrDefault,
-            SelectorQuality = result.Quality,
-            LastVerified = DateTime.UtcNow,
-            WindowHandle = winHandle
-        });
+        var elementId = CommandHelper.RememberElement(session, element, winHandle, result.Quality);
 
         sessionManager.Save(sessionPath, session);
         TargetContext.Set(window);

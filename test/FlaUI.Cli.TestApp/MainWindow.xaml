@@ -89,11 +89,11 @@
                   Margin="0,0,0,12"/>
 
         <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
-            <Button AutomationProperties.AutomationId="SubmitButton"
+            <Button x:Name="SubmitButton" AutomationProperties.AutomationId="SubmitButton"
                     Content="Submit"
                     Width="80" Margin="0,0,8,0"
                     Click="SubmitButton_Click"/>
-            <Button AutomationProperties.AutomationId="ClearButton"
+            <Button x:Name="ClearButton" AutomationProperties.AutomationId="ClearButton"
                     Content="Clear"
                     Width="80"
                     Click="ClearButton_Click"/>
