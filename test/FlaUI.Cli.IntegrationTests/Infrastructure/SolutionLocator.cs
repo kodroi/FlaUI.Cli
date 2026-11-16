@@ -20,14 +20,14 @@ public static class SolutionLocator
     {
         var config = GetBuildConfiguration();
         return Path.Combine(solutionRoot, "test", "FlaUI.Cli.TestApp", "bin", config,
-            "net10.0-windows", "FlaUI.Cli.TestApp.exe");
+            "net11.0-windows", "FlaUI.Cli.TestApp.exe");
     }
 
     public static string GetCliPath(string solutionRoot)
     {
         var config = GetBuildConfiguration();
         return Path.Combine(solutionRoot, "src", "FlaUI.Cli", "bin", config,
-            "net10.0", "FlaUI.Cli.exe");
+            "net11.0", "FlaUI.Cli.exe");
     }
 
     public static string? GetSkipReason(string solutionRoot)

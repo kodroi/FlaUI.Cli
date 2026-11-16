@@ -41,7 +41,7 @@ A stateless CLI built on [FlaUI](https://github.com/FlaUI/FlaUI) and Windows UI 
 
 ## Installation
 
-Requires [.NET 10 SDK](https://dotnet.microsoft.com/download) or later. Windows only.
+Requires Windows and the [.NET 11 SDK](https://dotnet.microsoft.com/download/dotnet/11.0), which includes the .NET 11 Desktop Runtime used by `flaui`.
 
 ```bash
 dotnet tool install --global FlaUI.Tool
