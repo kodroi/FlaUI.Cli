@@ -9,21 +9,20 @@ public static class ClickCommand
 {
     public static Command Create(Option<string?> sessionOption)
     {
-        var idOption = new Option<string>("--id") { Description = "Short element ID returned by 'elem find' (e.g. \"ec86bb98\")" };
-        idOption.Required = true;
         var doubleOption = new Option<bool>("--double") { Description = "Perform a double-click instead of a single click" };
         var rightOption = new Option<bool>("--right") { Description = "Perform a right-click (context menu) instead of a left click" };
         var windowOption = CommandHelper.CreateWindowOption();
 
         var command = new Command("click", "Click an element");
-        command.Add(idOption);
+        var (idOption, aidOption) = CommandHelper.AddActionSelectorOptions(command);
         command.Add(doubleOption);
         command.Add(rightOption);
         command.Add(windowOption);
 
         command.SetAction((ParseResult parseResult) =>
         {
-            var elementId = parseResult.GetValue(idOption)!;
+            var id = parseResult.GetValue(idOption);
+            var aid = parseResult.GetValue(aidOption);
             var doubleClick = parseResult.GetValue(doubleOption);
             var rightClick = parseResult.GetValue(rightOption);
             var windowHandle = parseResult.GetValue(windowOption);
@@ -39,13 +38,14 @@ public static class ClickCommand
                 var (_, mainWindow) = engine.ReattachFromSession(session);
                 var targetWindow = CommandHelper.ResolveWindow(engine, mainWindow, windowHandle);
 
-                var element = CommandHelper.ResolveElement(engine, sessionManager, session, targetWindow, elementId);
-                if (element is null)
+                var target = CommandHelper.ResolveActionTarget(engine, sessionManager, session, targetWindow, id, aid, out var error);
+                if (target is not { } resolved)
                 {
-                    JsonOutput.Write(new ErrorResult(false, $"Element '{elementId}' not found."));
+                    JsonOutput.Write(error);
                     return ExitCodes.Unresolvable;
                 }
 
+                var (element, elementId) = resolved;
                 AutomationEngine.Click(element, doubleClick, rightClick);
 
                 CommandHelper.RecordStep(session, "elem click", elementId,

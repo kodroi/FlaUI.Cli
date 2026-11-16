@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 
 namespace FlaUI.Cli.TestApp;
@@ -8,6 +9,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        if (Environment.GetCommandLineArgs().Contains("flaui-fixture-duplicate-aid", StringComparer.Ordinal))
+        {
+            AutomationProperties.SetAutomationId(SubmitButton, "DuplicateAction");
+            AutomationProperties.SetAutomationId(ClearButton, "DuplicateAction");
+        }
         PopulateVirtualizedCombo();
         PopulateTestGrid();
     }

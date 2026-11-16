@@ -8,6 +8,22 @@ namespace FlaUI.Cli.Commands.Elem;
 
 internal static class CommandHelper
 {
+    internal static (Option<string?> Id, Option<string?> Aid) AddActionSelectorOptions(Command command)
+    {
+        var id = new Option<string?>("--id") { Description = "Short element ID returned by 'elem find'" };
+        var aid = new Option<string?>("--aid") { Description = "Unique AutomationId in the target window" };
+        command.Add(id);
+        command.Add(aid);
+        command.Validators.Add(result =>
+        {
+            if ((result.GetResult(id) is null) == (result.GetResult(aid) is null))
+                result.AddError("Specify exactly one of --id or --aid.");
+            else if (string.IsNullOrWhiteSpace(result.GetValue(id) ?? result.GetValue(aid)))
+                result.AddError("The element selector must not be empty.");
+        });
+        return (id, aid);
+    }
+
     internal static Option<string?> CreateWindowOption()
     {
         return new Option<string?>("--window")
@@ -71,6 +87,52 @@ internal static class CommandHelper
         }
 
         return null;
+    }
+
+    internal static (AutomationElement Element, string ElementId)? ResolveActionTarget(
+        AutomationEngine engine, SessionManager sessionManager, SessionFile session, AutomationElement targetWindow,
+        string? elementId, string? automationId, out ErrorResult? error)
+    {
+        error = null;
+        if (elementId is not null)
+        {
+            var remembered = ResolveElement(engine, sessionManager, session, targetWindow, elementId);
+            if (remembered is not null) return (remembered, elementId);
+
+            error = new ErrorResult(false, $"Element '{elementId}' not found.", "not_found");
+            return null;
+        }
+
+        var matches = targetWindow.FindAllDescendants(conditions => conditions.ByAutomationId(automationId!));
+        if (matches.Length != 1)
+        {
+            error = matches.Length == 0
+                ? new ErrorResult(false, $"Element with AutomationId '{automationId}' not found in the target window.", "not_found")
+                : new ErrorResult(false, $"AutomationId '{automationId}' matches multiple elements in the target window.",
+                    "ambiguous_selector", Recovery: "Use an AutomationId that is unique in the target window.");
+            return null;
+        }
+
+        var element = matches[0];
+        var windowHandle = targetWindow.Properties.NativeWindowHandle.ValueOrDefault.ToInt64();
+        return (element, RememberElement(session, element, windowHandle, SelectorQuality.Stable));
+    }
+
+    internal static string RememberElement(SessionFile session, AutomationElement element, long windowHandle, SelectorQuality quality)
+    {
+        var elementId = Guid.NewGuid().ToString("N")[..8];
+        SessionManager.AddElement(session, elementId, new ElementEntry
+        {
+            AutomationId = element.Properties.AutomationId.ValueOrDefault,
+            Name = element.Properties.Name.ValueOrDefault,
+            ControlType = element.Properties.ControlType.ValueOrDefault.ToString(),
+            ClassName = element.Properties.ClassName.ValueOrDefault,
+            RuntimeId = element.Properties.RuntimeId.ValueOrDefault,
+            SelectorQuality = quality,
+            WindowHandle = windowHandle,
+            LastVerified = DateTime.UtcNow
+        });
+        return elementId;
     }
 
     private static SelectorResult? ResolveEntry(SelectorResolver resolver, AutomationElement window, ElementEntry entry)
